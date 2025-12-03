@@ -1,8 +1,17 @@
-import time
-import math
-import mujoco
-import mujoco.viewer
+import numpy as np
+from scipy.spatial import transform
+import matplotlib.pyplot as plt
 
+import jax
+import jax.numpy as jnp
+
+import mediapy
+
+import collimator
+from collimator import library
+from collimator.backend import io_callback
+
+import mujoco
 model = mujoco.MjModel.from_xml_path(
     'mujoco_menagerie/franka_fr3/scene.xml'
 )
