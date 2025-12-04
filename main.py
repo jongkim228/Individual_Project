@@ -18,7 +18,7 @@ hand_pos = data.xpos[hand_id]
 cube_id = model.body("cube1").id
 cube_pos = data.xpos[cube_id]
 
-def ik(model, data, hand_id, target_pos, kp=4.0):
+def ik(model, data, hand_id, target_pos, kp=1.5):
     mujoco.mj_forward(model, data)
     ee_pos = data.xpos[hand_id]
 
@@ -32,17 +32,19 @@ def ik(model, data, hand_id, target_pos, kp=4.0):
     dq = kp * J.T @ error
     data.qvel[:] = dq
 
-    mujoco.mj_step(model, data)
 
 
 with mujoco.viewer.launch_passive(model, data) as viewer:
-    for _ in range(200):
+    while viewer.is_running():
+        for _ in range(600):
 
-        cube_pos = data.xpos[cube_id].copy()
+            cube_pos = data.xpos[cube_id].copy()
 
-        target_pos = cube_pos.copy()
-        target_pos[2] += 0.10
+            target_pos = cube_pos.copy()
+            target_pos[2] += 0.10
 
-        ik(model, data, hand_id, target_pos)
+            ik(model, data, hand_id, target_pos)
 
-        viewer.sync()
+            mujoco.mj_step(model, data)
+
+            viewer.sync()
