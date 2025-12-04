@@ -1,11 +1,12 @@
 import numpy as np
 import mujoco
 import mujoco.viewer
-
+import cv2
 
 model = mujoco.MjModel.from_xml_path("mujoco_menagerie/franka_emika_panda/scene.xml")
 data = mujoco.MjData(model)
 
+renderer = mujoco.Renderer(model, width=640, height=480)
 
 arm_actuator_names = [
     "actuator1", "actuator2", "actuator3",
@@ -18,19 +19,29 @@ hand_pos = data.xpos[hand_id]
 cube_id = model.body("cube1").id
 cube_pos = data.xpos[cube_id]
 
-def ik(model, data, hand_id, target_pos, kp=1.5):
+def ik_lookat(model, data, hand_id, target_pos, cube_pos, kp_pos=1.5, kp_ori=1.5):
     mujoco.mj_forward(model, data)
+
     ee_pos = data.xpos[hand_id]
+    pos_err = target_pos - ee_pos
 
-    error = target_pos - ee_pos
+    J_pos = np.zeros((3, model.nv))
+    mujoco.mj_jac(model, data, J_pos, None, ee_pos, hand_id)
 
-    J = np.zeros((3, model.nv))
-    point = ee_pos.reshape(3, 1)
+    R = data.xmat[hand_id].reshape(3,3)
+    ee_z = R @ np.array([0.0, 0.0, 1.0])
+    target_dir = cube_pos - ee_pos
+    target_dir /= np.linalg.norm(target_dir)
 
-    mujoco.mj_jac(model, data, J, None, point, hand_id)
+    ori_err = np.cross(ee_z, target_dir)
 
-    dq = kp * J.T @ error
+    J_ori = np.zeros((3, model.nv))
+    mujoco.mj_jac(model, data, None, J_ori, ee_pos, hand_id)
+
+    dq = kp_pos * (J_pos.T @ pos_err) + kp_ori * (J_ori.T @ ori_err)
     data.qvel[:] = dq
+
+    mujoco.mj_step(model, data)
 
 
 
@@ -41,10 +52,15 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             cube_pos = data.xpos[cube_id].copy()
 
             target_pos = cube_pos.copy()
-            target_pos[2] += 0.10
+            target_pos[2] += 0.40
 
-            ik(model, data, hand_id, target_pos)
+            ik_lookat(model, data, hand_id, target_pos, cube_pos)
 
-            mujoco.mj_step(model, data)
+            renderer.update_scene(data)
+            img = renderer.render(camera_name="wrist_cam")
+            cv2.imshow("Camera View", cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
+            if cv2.waitKey(1) == 27:
+                break
+            
 
             viewer.sync()
