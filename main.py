@@ -56,8 +56,8 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
             ik_lookat(model, data, hand_id, target_pos, cube_pos)
 
-            renderer.update_scene(data)
-            img = renderer.render(camera_name="wrist_cam")
+            renderer.update_scene(data,camera="wrist_cam")
+            img = renderer.render().copy()
             cv2.imshow("Camera View", cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
             if cv2.waitKey(1) == 27:
                 break
