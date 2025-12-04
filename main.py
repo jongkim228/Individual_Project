@@ -1,35 +1,41 @@
 import numpy as np
-from scipy.spatial import transform
-import matplotlib.pyplot as plt
-
-import jax
-import jax.numpy as jnp
-
-import mediapy
-
-import collimator
-from collimator import library
-from collimator.backend import io_callback
-
 import mujoco
-model = mujoco.MjModel.from_xml_path(
-    'mujoco_menagerie/franka_fr3/scene.xml'
-)
+import mujoco.viewer
 
+model = mujoco.MjModel.from_xml_path("mujoco_menagerie/franka_emika_panda/scene.xml")
 data = mujoco.MjData(model)
 
-print("Actuator 개수:", model.nu)  # 확인용 출력
-print("Actuator 타입:", model.actuator_trntype)
-print("Actuator 제어 대상:", [model.actuator_trnid[i][0] for i in range(model.nu)])
-print("초기 관절 위치:", data.qpos[:7])
 
+arm_actuator_names = [
+    "actuator1", "actuator2", "actuator3",
+    "actuator4", "actuator5", "actuator6", "actuator7"
+]
+arm_actuator_ids = np.array([model.actuator(name).id for name in arm_actuator_names])
+
+hand_id = model.body("hand").id
+hand_pos = data.xpos[hand_id]
+cube_id = model.body("cube1").id
+cube_pos = data.xpos[cube_id]
+
+
+def move_forward_live():
+    data.ctrl[:] = 0.0
+    for _ in range(600):
+        data.ctrl[arm_actuator_ids[1]] = 0.5
+        data.ctrl[arm_actuator_ids[2]] = -0.5
+        data.ctrl[arm_actuator_ids[3]] = 1
+        data.ctrl[arm_actuator_ids[4]] = 0.5
+        data.ctrl[arm_actuator_ids[4]] = 0.5
+
+        mujoco.mj_step(model, data)
+        viewer.sync()
 
 
 with mujoco.viewer.launch_passive(model, data) as viewer:
-    start = time.time()
-    while viewer.is_running():
-        # 첫 번째 관절을 계속 좌우로 흔들기
-        data.ctrl[0] = 0.7 * math.sin(2 * (time.time() - start))
+    move_forward_live()
 
+
+    # 끝난 뒤 카메라 유지
+    while viewer.is_running():
         mujoco.mj_step(model, data)
-        time.sleep(0.002)
+        viewer.sync()
