@@ -2,6 +2,7 @@ import numpy as np
 import mujoco
 import mujoco.viewer
 
+
 model = mujoco.MjModel.from_xml_path("mujoco_menagerie/franka_emika_panda/scene.xml")
 data = mujoco.MjData(model)
 
@@ -17,25 +18,31 @@ hand_pos = data.xpos[hand_id]
 cube_id = model.body("cube1").id
 cube_pos = data.xpos[cube_id]
 
+def ik(model, data, hand_id, target_pos, kp=4.0):
+    mujoco.mj_forward(model, data)
+    ee_pos = data.xpos[hand_id]
 
-def move_forward_live():
-    data.ctrl[:] = 0.0
-    for _ in range(600):
-        data.ctrl[arm_actuator_ids[1]] = 0.5
-        data.ctrl[arm_actuator_ids[2]] = -0.5
-        data.ctrl[arm_actuator_ids[3]] = 1
-        data.ctrl[arm_actuator_ids[4]] = 0.5
-        data.ctrl[arm_actuator_ids[4]] = 0.5
+    error = target_pos - ee_pos
 
-        mujoco.mj_step(model, data)
-        viewer.sync()
+    J = np.zeros((3, model.nv))
+    point = ee_pos.reshape(3, 1)
+
+    mujoco.mj_jac(model, data, J, None, point, hand_id)
+
+    dq = kp * J.T @ error
+    data.qvel[:] = dq
+
+    mujoco.mj_step(model, data)
 
 
 with mujoco.viewer.launch_passive(model, data) as viewer:
-    move_forward_live()
+    for _ in range(200):
 
+        cube_pos = data.xpos[cube_id].copy()
 
-    # 끝난 뒤 카메라 유지
-    while viewer.is_running():
-        mujoco.mj_step(model, data)
+        target_pos = cube_pos.copy()
+        target_pos[2] += 0.10
+
+        ik(model, data, hand_id, target_pos)
+
         viewer.sync()
