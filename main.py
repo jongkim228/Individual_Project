@@ -2,16 +2,20 @@ import numpy as np
 import mujoco
 import mujoco.viewer
 import cv2
+import glfw
 
 model = mujoco.MjModel.from_xml_path("mujoco_menagerie/franka_emika_panda/scene.xml")
 data = mujoco.MjData(model)
 
-renderer = mujoco.Renderer(model, width=640, height=480)
+scene = mujoco.MjvScene(model, maxgeom=10000)
+context = mujoco.MjrContext(model, mujoco.mjtFontScale.mjFONTSCALE_150)
 
 arm_actuator_names = [
     "actuator1", "actuator2", "actuator3",
     "actuator4", "actuator5", "actuator6", "actuator7"
 ]
+
+
 arm_actuator_ids = np.array([model.actuator(name).id for name in arm_actuator_names])
 
 hand_id = model.body("hand").id
@@ -55,12 +59,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             target_pos[2] += 0.40
 
             ik_lookat(model, data, hand_id, target_pos, cube_pos)
-
-            renderer.update_scene(data,camera="wrist_cam")
-            img = renderer.render().copy()
-            cv2.imshow("Camera View", cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
-            if cv2.waitKey(1) == 27:
-                break
             
+
 
             viewer.sync()
