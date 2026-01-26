@@ -2,6 +2,8 @@ import numpy as np
 import mujoco
 import mujoco.viewer
 import time
+import cv2
+import matplotlib.pyplot as plt
 
 model = mujoco.MjModel.from_xml_path("mujoco_menagerie/franka_emika_panda/scene.xml")
 data = mujoco.MjData(model)
@@ -23,6 +25,11 @@ cube_id = model.body("cube1").id
 space_id = model.body("space").id
 cube_pos = data.xpos[cube_id]
 space_pos = data.xpos[space_id]
+
+#Camera Rendering
+h, w = 240, 320
+renderer = mujoco.Renderer(model, height=h, width=w)
+camera_name = "camera_head"
 
 def smooth_move(current, target, speed=0.05):
     return current + speed * (target - current)
@@ -66,13 +73,16 @@ def ik(model, data, hand_id, t_position, alpha = 0.1):
     data.ctrl[arm_actuator_ids] = q_target
 
 with mujoco.viewer.launch_passive(model, data) as viewer:
-
     state = 'wait'
     start_time = data.time
     t_position = data.xpos[hand_id].copy()
     goal_position = t_position.copy()
 
+
+    mujoco.mj_forward(model, data)
+
     while viewer.is_running():
+
         current_time = data.time - start_time
         cube_pos = data.xpos[cube_id].copy()
         ik(model, data, hand_id, t_position)
@@ -115,8 +125,6 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             data.ctrl[gripper_id] = 255
             goal_position = cube_pos + np.array([0, 0, 0.5])
 
-        
-            
 
         t_position = smooth_move(t_position, goal_position, speed=0.04)
         
@@ -124,5 +132,19 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         ik(model, data, hand_id, t_position, alpha=0.3)
 
         mujoco.mj_step(model, data)
+
         viewer.sync()
 
+        renderer.update_scene(data,camera=camera_name)
+        img = renderer.render()
+        print(img.shape, img.dtype, img.flags["C_CONTIGUOUS"])
+        cv2.imshow("Sub Camera", img[:, :, ::-1])
+
+        
+        if cv2.waitKey(1) == 27:
+            break
+
+        time.sleep(0.001)
+
+
+cv2.destroyAllWindows()
