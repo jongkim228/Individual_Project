@@ -27,13 +27,21 @@ cube_pos = data.xpos[cube_id]
 space_pos = data.xpos[space_id]
 
 #Camera Rendering
-h, w = 240, 320
+h, w = 320, 480
 renderer = mujoco.Renderer(model, height=h, width=w)
 camera_name = "camera_head"
+
+#Middle coordinate for camera screen
+u = w // 2
+v = h // 2
+
+
+
 
 def smooth_move(current, target, speed=0.05):
     return current + speed * (target - current)
 
+#Inverse Kinematics
 def ik(model, data, hand_id, t_position, alpha = 0.1):
 
     mujoco.mj_kinematics(model,data)
@@ -72,7 +80,31 @@ def ik(model, data, hand_id, t_position, alpha = 0.1):
 
     data.ctrl[arm_actuator_ids] = q_target
 
+
+def object_in_fov(model, data, camera_name, cube_id):
+    mujoco.mj_forward(model, data)
+    camera_id = model.camera(camera_name).id
+    world_cam = data.cam_xpos[camera_id]
+    world_obj = data.xpos[cube_id]
+
+    camera_rot = data.cam_xmat[camera_id].reshape(3,3)
+
+    obj_cam = camera_rot.T @ (world_obj - world_cam)
+
+    x, y, z = obj_cam
+
+    print(x,y,z)
+
+
+
+
 with mujoco.viewer.launch_passive(model, data) as viewer:
+
+    renderer.enable_depth_rendering()
+    depth = renderer.render()
+    renderer.disable_depth_rendering()
+    distance = depth[v, u] 
+
     state = 'wait'
     start_time = data.time
     t_position = data.xpos[hand_id].copy()
@@ -82,6 +114,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
     mujoco.mj_forward(model, data)
 
     while viewer.is_running():
+
 
         current_time = data.time - start_time
         cube_pos = data.xpos[cube_id].copy()
@@ -99,27 +132,27 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
         elif state == 'above':
             data.ctrl[gripper_id] = 255
-            if current_time > 7.0:
+            if current_time > 6.0:
                 state = 'opened'
         
         elif state == 'opened':
             goal_position = cube_pos + np.array([-0.18,0,0.24])
-            if current_time > 11.0:
+            if current_time > 10.0:
                 state = 'down'
 
         elif state == 'down':
             data.ctrl[gripper_id] = 0
-            if current_time > 14.0:
+            if current_time > 12.0:
                 state = 'up'
         
         elif state =='up':
             goal_position = cube_pos + np.array([-0.2,0,0.6])
-            if current_time > 15.0:
+            if current_time > 14.0:
                 state = 'move'
         
         elif state == 'move':
             goal_position = space_pos + np.array([0,0,0.24])
-            if current_time > 17.0:
+            if current_time > 16.0:
                 state = 'finish'
         elif state == 'finish':
             data.ctrl[gripper_id] = 255
@@ -135,9 +168,20 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
         viewer.sync()
 
+        
         renderer.update_scene(data,camera=camera_name)
         img = renderer.render()
-        print(img.shape, img.dtype, img.flags["C_CONTIGUOUS"])
+        rgb = renderer.render()
+
+        renderer.enable_depth_rendering()
+        depth = renderer.render()
+        renderer.disable_depth_rendering()
+        distance = depth[v, u] 
+        
+        object_in_fov(model, data, camera_name,cube_id)
+
+
+
         cv2.imshow("Sub Camera", img[:, :, ::-1])
 
         
