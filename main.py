@@ -3,7 +3,7 @@ import mujoco
 import mujoco.viewer
 import time
 import cv2
-import matplotlib.pyplot as plt
+import math
 
 model = mujoco.MjModel.from_xml_path("mujoco_menagerie/franka_emika_panda/scene.xml")
 data = mujoco.MjData(model)
@@ -36,15 +36,14 @@ u = w // 2
 v = h // 2
 
 
-
-
 def smooth_move(current, target, speed=0.05):
     return current + speed * (target - current)
 
 #Inverse Kinematics
-def ik(model, data, hand_id, t_position, alpha = 0.1):
+def inverse_kinematics(model, data, hand_id, t_position, alpha = 0.3,q_nominal = False):
 
     mujoco.mj_kinematics(model,data)
+
 
     ee_position = data.xpos[hand_id].copy()
     ee_rotation = data.xmat[hand_id].reshape(3,3).copy()
@@ -81,7 +80,7 @@ def ik(model, data, hand_id, t_position, alpha = 0.1):
     data.ctrl[arm_actuator_ids] = q_target
 
 
-def object_in_fov(model, data, camera_name, cube_id):
+def calculate_in_local(model, data, camera_name, cube_id):
     mujoco.mj_forward(model, data)
     camera_id = model.camera(camera_name).id
     world_cam = data.cam_xpos[camera_id]
@@ -89,11 +88,36 @@ def object_in_fov(model, data, camera_name, cube_id):
 
     camera_rot = data.cam_xmat[camera_id].reshape(3,3)
 
-    obj_cam = camera_rot.T @ (world_obj - world_cam)
+    local_distance = camera_rot.T @ (world_obj - world_cam)
 
-    x, y, z = obj_cam
+    return local_distance
 
-    print(x,y,z)
+def objects_in_fov(local):
+    x, y, z = local
+    if z >= 0:
+        return False
+
+    zz = -z
+
+    return (abs(x / zz) <= 0.866) and (abs(y / zz) <= 0.577)
+
+
+def project_local_to_pixel(local, w, h, fovy_deg):
+    x, y, z = local
+    if z >= 0:
+        return None
+
+    fovy = math.radians(fovy_deg)
+    aspect = w / h
+    fovx = 2.0 * math.atan(math.tan(fovy/2.0) * aspect)
+
+    fx = (w/2.0) / math.tan(fovx/2.0)
+    fy = (h/2.0) / math.tan(fovy/2.0)
+    cx, cy = w/2.0, h/2.0
+
+    u = cx + fx * (x / -z)
+    v = cy + fy * (y / -z)
+    return int(u), int(v)
 
 
 
@@ -118,51 +142,58 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
         current_time = data.time - start_time
         cube_pos = data.xpos[cube_id].copy()
-        ik(model, data, hand_id, t_position)
-        
-        if state =='wait':
-            goal_position = data.xpos[hand_id].copy()
-            if current_time > 2.0:
-                state = 'start'
+        cam_id = model.camera(camera_name).id
+        fovy_deg = float(model.cam_fovy[cam_id])
 
-        elif state == 'start':
-            goal_position = cube_pos + np.array([0, 0, 0.5])
-            if current_time > 4.0:
-                state = 'above'
-
-        elif state == 'above':
-            data.ctrl[gripper_id] = 255
-            if current_time > 6.0:
-                state = 'opened'
-        
-        elif state == 'opened':
-            goal_position = cube_pos + np.array([-0.18,0,0.24])
-            if current_time > 10.0:
-                state = 'down'
-
-        elif state == 'down':
-            data.ctrl[gripper_id] = 0
-            if current_time > 12.0:
-                state = 'up'
-        
-        elif state =='up':
-            goal_position = cube_pos + np.array([-0.2,0,0.6])
-            if current_time > 14.0:
-                state = 'move'
-        
-        elif state == 'move':
-            goal_position = space_pos + np.array([0,0,0.24])
-            if current_time > 16.0:
-                state = 'finish'
-        elif state == 'finish':
-            data.ctrl[gripper_id] = 255
-            goal_position = cube_pos + np.array([0, 0, 0.5])
-
-
-        t_position = smooth_move(t_position, goal_position, speed=0.04)
+        local_value = calculate_in_local(model, data, camera_name, cube_id)
         
 
-        ik(model, data, hand_id, t_position, alpha=0.3)
+        if objects_in_fov(local_value):
+
+        
+            if state =='wait':
+                goal_position = data.xpos[hand_id].copy()
+                if current_time > 2.0:
+                    state = 'start'
+
+            elif state == 'start':
+                goal_position = cube_pos + np.array([0, 0, 0.5])
+                if current_time > 4.0:
+                    state = 'above'
+
+            elif state == 'above':
+                data.ctrl[gripper_id] = 255
+                if current_time > 6.0:
+                    state = 'opened'
+            
+            elif state == 'opened':
+                goal_position = cube_pos + np.array([-0.18,0,0.24])
+                if current_time > 10.0:
+                    state = 'down'
+
+            elif state == 'down':
+                data.ctrl[gripper_id] = 0
+                if current_time > 12.0:
+                    state = 'up'
+            
+            elif state =='up':
+                goal_position = cube_pos + np.array([-0.2,0,0.6])
+                if current_time > 14.0:
+                    state = 'move'
+            
+            elif state == 'move':
+                goal_position = space_pos + np.array([0,0,0.24])
+                if current_time > 16.0:
+                    state = 'finish'
+            elif state == 'finish':
+                data.ctrl[gripper_id] = 255
+                goal_position = cube_pos + np.array([0, 0, 0.5])
+
+
+        t_position = smooth_move(t_position, goal_position, speed=0.08)
+        
+
+        inverse_kinematics(model, data, hand_id, t_position, alpha=0.3)
 
         mujoco.mj_step(model, data)
 
@@ -178,7 +209,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         renderer.disable_depth_rendering()
         distance = depth[v, u] 
         
-        object_in_fov(model, data, camera_name,cube_id)
+        calculate_in_local(model, data, camera_name,cube_id)
 
 
 
