@@ -22,7 +22,10 @@ hand_id = model.body("hand").id
 hand_pos = data.xpos[hand_id]
 
 cube_id = model.body("cube1").id
-space_id = model.body("space").id
+space_id = model.body("target_space").id
+start_pos_id = model.body("starting_space").id
+
+start_pos = data.xpos[start_pos_id]
 cube_pos = data.xpos[cube_id]
 space_pos = data.xpos[space_id]
 
@@ -40,7 +43,7 @@ def smooth_move(current, target, speed=0.05):
     return current + speed * (target - current)
 
 #Inverse Kinematics
-def inverse_kinematics(model, data, hand_id, t_position, alpha = 0.3,q_nominal = False):
+def inverse_kinematics(model, data, hand_id, t_position, alpha = 0.3):
 
     mujoco.mj_kinematics(model,data)
 
@@ -72,12 +75,27 @@ def inverse_kinematics(model, data, hand_id, t_position, alpha = 0.3,q_nominal =
     J = np.vstack([jac_pos, jac_rot])
 
     JJt = J @ J.T
-    dq = J.T @ np.linalg.solve(JJt + 0.1 * np.eye(6), err)
 
-    q_current = data.qpos[:7].copy()
-    q_target = q_current + alpha * dq[:7]
+    #pseudo inverse
+    j_pse_inverse = J.T @ np.linalg.solve(JJt + 0.01 * np.eye(6), np.eye(6))
 
-    data.ctrl[arm_actuator_ids] = q_target
+    dq_t = j_pse_inverse @ err
+
+    q_nominal = np.array([0.0, -0.6, 0.0, -2.2, 0.0, 1.6, 0.8])
+    q_cur = data.qpos[:7].copy()
+
+    N = np.eye(model.nv) - j_pse_inverse @ J
+
+    k_null = 0.5
+    dq0 = np.zeros(model.nv)
+    dq0[:7] = (q_nominal - q_cur)
+
+    dq = dq_t + k_null * (N @ dq0)
+
+    q_target = q_cur + alpha * dq[:7]  
+    data.ctrl[arm_actuator_ids] = q_target    
+
+
 
 
 def calculate_in_local(model, data, camera_name, cube_id):
@@ -100,25 +118,6 @@ def objects_in_fov(local):
     zz = -z
 
     return (abs(x / zz) <= 0.866) and (abs(y / zz) <= 0.577)
-
-
-def project_local_to_pixel(local, w, h, fovy_deg):
-    x, y, z = local
-    if z >= 0:
-        return None
-
-    fovy = math.radians(fovy_deg)
-    aspect = w / h
-    fovx = 2.0 * math.atan(math.tan(fovy/2.0) * aspect)
-
-    fx = (w/2.0) / math.tan(fovx/2.0)
-    fy = (h/2.0) / math.tan(fovy/2.0)
-    cx, cy = w/2.0, h/2.0
-
-    u = cx + fx * (x / -z)
-    v = cy + fy * (y / -z)
-    return int(u), int(v)
-
 
 
 
@@ -146,48 +145,11 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         fovy_deg = float(model.cam_fovy[cam_id])
 
         local_value = calculate_in_local(model, data, camera_name, cube_id)
-        
+
+        goal_position = start_pos + np.array([0,0,0.5])
 
         if objects_in_fov(local_value):
-
-        
-            if state =='wait':
-                goal_position = data.xpos[hand_id].copy()
-                if current_time > 2.0:
-                    state = 'start'
-
-            elif state == 'start':
-                goal_position = cube_pos + np.array([0, 0, 0.5])
-                if current_time > 4.0:
-                    state = 'above'
-
-            elif state == 'above':
-                data.ctrl[gripper_id] = 255
-                if current_time > 6.0:
-                    state = 'opened'
-            
-            elif state == 'opened':
-                goal_position = cube_pos + np.array([-0.18,0,0.24])
-                if current_time > 10.0:
-                    state = 'down'
-
-            elif state == 'down':
-                data.ctrl[gripper_id] = 0
-                if current_time > 12.0:
-                    state = 'up'
-            
-            elif state =='up':
-                goal_position = cube_pos + np.array([-0.2,0,0.6])
-                if current_time > 14.0:
-                    state = 'move'
-            
-            elif state == 'move':
-                goal_position = space_pos + np.array([0,0,0.24])
-                if current_time > 16.0:
-                    state = 'finish'
-            elif state == 'finish':
-                data.ctrl[gripper_id] = 255
-                goal_position = cube_pos + np.array([0, 0, 0.5])
+            state = 'search'
 
 
         t_position = smooth_move(t_position, goal_position, speed=0.08)
