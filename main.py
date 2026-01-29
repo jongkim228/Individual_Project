@@ -47,7 +47,6 @@ def inverse_kinematics(model, data, hand_id, t_position, alpha = 0.3):
 
     mujoco.mj_kinematics(model,data)
 
-
     ee_position = data.xpos[hand_id].copy()
     ee_rotation = data.xmat[hand_id].reshape(3,3).copy()
  
@@ -119,6 +118,61 @@ def objects_in_fov(local):
 
     return (abs(x / zz) <= 0.866) and (abs(y / zz) <= 0.577)
 
+def reached(ee_pos, goal_pos, tol):
+    return np.linalg.norm(ee_pos - goal_pos) < tol
+
+
+def pick_and_place(model,data,target_cube, space_id, ee_pos, gripper_open = 255, gripper_close = 0, tol = 0.05):
+    
+    cube_id = model.body(target_cube).id
+    target_cube_pos = data.pos(cube_id).xpos.copy()
+    above_cube_pos = target_cube_pos + np.array([0, 0, 0.5])
+    close_cube_pos = target_cube_pos + np.array([0, 0, 0.2])
+
+    target_space_pos = data.pos(space_id).xpos.copy()
+    above_target_pos = target_space_pos + np.array([0, 0, 0.5])
+    close_target_pos = target_space_pos + np.array([0, 0, 0.2])
+    
+    state = "start"
+
+    if state == "start":
+
+        if reached(ee_pos,above_cube_pos, tol):
+            return "open_gripper"
+        
+    if state == "open_gripper":
+        data.ctrl[7] = gripper_open
+        return "descend_to_cube"
+    
+    if state == "descend_to_cube":
+        if reached(ee_pos, close_cube_pos,tol):
+            return "close_gripper"
+        
+    if state == "close_gripper":
+        data.ctrl[7] = gripper_close
+        return "lift"
+    
+    if state == "lift":
+        if reached(ee_pos,above_cube_pos,tol):
+            return "move_to_target"
+    
+    if state == "move_to_target":
+        if reached(ee_pos,above_target_pos,tol):
+            return "descend_to_target"
+        
+    if state == "descend_to_target":
+        if reached(ee_pos,close_target_pos,tol):
+            data.ctrl[7] = gripper_open
+            return "move_up"
+        
+    if state == "move_up":
+        if reached(ee_pos,above_target_pos,tol):
+            return "default"
+        
+    if state == "default":
+        if reached(ee_pos,start_pos + np.array([0,0,0.5]),tol):
+            return "end"
+
 
 
 with mujoco.viewer.launch_passive(model, data) as viewer:
@@ -133,11 +187,9 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
     t_position = data.xpos[hand_id].copy()
     goal_position = t_position.copy()
 
-
     mujoco.mj_forward(model, data)
 
     while viewer.is_running():
-
 
         current_time = data.time - start_time
         cube_pos = data.xpos[cube_id].copy()
@@ -149,7 +201,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         goal_position = start_pos + np.array([0,0,0.5])
 
         if objects_in_fov(local_value):
-            state = 'search'
+            pick_and_place()
 
 
         t_position = smooth_move(t_position, goal_position, speed=0.08)
