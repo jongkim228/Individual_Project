@@ -135,9 +135,7 @@ def pick_and_place(model,data,target_cube, space_id, ee_pos, state, gripper_open
 
     next_state = state
     goal_position = ee_pos.copy()
-    
-    start_enter_time = data.time
-    data.time - start_enter_time
+
 
     if state == "start":
         goal_position = above_cube_pos
@@ -156,8 +154,14 @@ def pick_and_place(model,data,target_cube, space_id, ee_pos, state, gripper_open
     elif state == "close_gripper":
         
         data.ctrl[7] = gripper_close
+        goal_position = close_cube_pos
+        hold_count += 1
 
-        next_state = "lift"
+        if hold_count >= 40
+
+        next_state = "hold"
+        
+
     
     elif state == "lift":
         goal_position = above_cube_pos
@@ -248,7 +252,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         if cv2.waitKey(1) == 27:
             break
 
-        time.sleep(0.001)
+        time.sleep(0.002)
 
 
 cv2.destroyAllWindows()
