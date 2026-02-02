@@ -27,7 +27,7 @@ start_pos_id = model.body("starting_space").id
 
 start_pos = data.xpos[start_pos_id]
 cube_pos = data.xpos[cube_id]
-space_pos = data.xpos[space_id]
+target_space_pos = data.xpos[space_id].copy()
 
 #Camera Rendering
 h, w = 320, 480
@@ -115,63 +115,76 @@ def objects_in_fov(local):
         return False
 
     zz = -z
-
+    #need to change the numbers
     return (abs(x / zz) <= 0.866) and (abs(y / zz) <= 0.577)
 
 def reached(ee_pos, goal_pos, tol):
     return np.linalg.norm(ee_pos - goal_pos) < tol
 
 
-def pick_and_place(model,data,target_cube, space_id, ee_pos, gripper_open = 255, gripper_close = 0, tol = 0.05):
+def pick_and_place(model,data,target_cube, space_id, ee_pos, state, gripper_open = 255, gripper_close = 0, tol = 0.05):
     
     cube_id = model.body(target_cube).id
-    target_cube_pos = data.pos(cube_id).xpos.copy()
+    target_cube_pos = data.xpos[cube_id].copy()
     above_cube_pos = target_cube_pos + np.array([0, 0, 0.5])
-    close_cube_pos = target_cube_pos + np.array([0, 0, 0.2])
+    close_cube_pos = target_cube_pos + np.array([0, 0, 0.05])
 
-    target_space_pos = data.pos(space_id).xpos.copy()
+    target_space_pos = data.xpos[space_id].copy()
     above_target_pos = target_space_pos + np.array([0, 0, 0.5])
-    close_target_pos = target_space_pos + np.array([0, 0, 0.2])
+    close_target_pos = target_space_pos + np.array([0, 0, 0.05])
+
+    next_state = state
+    goal_position = ee_pos.copy()
     
-    state = "start"
+    start_enter_time = data.time
+    data.time - start_enter_time
 
     if state == "start":
-
+        goal_position = above_cube_pos
         if reached(ee_pos,above_cube_pos, tol):
-            return "open_gripper"
+            next_state = "open_gripper"
         
-    if state == "open_gripper":
+    elif state == "open_gripper":
         data.ctrl[7] = gripper_open
-        return "descend_to_cube"
+        next_state = "descend_to_cube"
     
-    if state == "descend_to_cube":
+    elif state == "descend_to_cube":
+        goal_position = close_cube_pos
         if reached(ee_pos, close_cube_pos,tol):
-            return "close_gripper"
+            next_state = "close_gripper"
         
-    if state == "close_gripper":
+    elif state == "close_gripper":
+        
         data.ctrl[7] = gripper_close
-        return "lift"
+
+        next_state = "lift"
     
-    if state == "lift":
+    elif state == "lift":
+        goal_position = above_cube_pos
         if reached(ee_pos,above_cube_pos,tol):
-            return "move_to_target"
+            next_state = "move_to_target"
     
-    if state == "move_to_target":
+    elif state == "move_to_target":
+        goal_position = above_target_pos
         if reached(ee_pos,above_target_pos,tol):
-            return "descend_to_target"
+            next_state = "descend_to_target"
         
-    if state == "descend_to_target":
+    elif state == "descend_to_target":
         if reached(ee_pos,close_target_pos,tol):
             data.ctrl[7] = gripper_open
-            return "move_up"
+            next_state = "move_up"
         
-    if state == "move_up":
+    elif state == "move_up":
+        goal_position = above_target_pos
         if reached(ee_pos,above_target_pos,tol):
-            return "default"
+            next_state = "default"
         
-    if state == "default":
+    elif state == "default":
+        goal_position = start_pos + np.array([0,0,0.5])
         if reached(ee_pos,start_pos + np.array([0,0,0.5]),tol):
-            return "end"
+            next_state = "end"
+
+    return next_state, goal_position
 
 
 
@@ -195,18 +208,21 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         cube_pos = data.xpos[cube_id].copy()
         cam_id = model.camera(camera_name).id
         fovy_deg = float(model.cam_fovy[cam_id])
+        target_space_pos = data.xpos[space_id].copy()
 
         local_value = calculate_in_local(model, data, camera_name, cube_id)
 
-        goal_position = start_pos + np.array([0,0,0.5])
+        if state =="wait":
+            goal_position = start_pos + np.array([0,0,0.5])
+            if objects_in_fov(local_value):
+                state = "start"
 
-        if objects_in_fov(local_value):
-            pick_and_place()
+        elif state != "end":
+            state, goal_position = pick_and_place(model,data,target_cube = "cube1",space_id = space_id, ee_pos=data.xpos[hand_id].copy(),state=state)
 
 
         t_position = smooth_move(t_position, goal_position, speed=0.08)
         
-
         inverse_kinematics(model, data, hand_id, t_position, alpha=0.3)
 
         mujoco.mj_step(model, data)
@@ -224,7 +240,6 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         distance = depth[v, u] 
         
         calculate_in_local(model, data, camera_name,cube_id)
-
 
 
         cv2.imshow("Sub Camera", img[:, :, ::-1])
