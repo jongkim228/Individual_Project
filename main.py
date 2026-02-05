@@ -121,6 +121,18 @@ def objects_in_fov(local):
 def reached(ee_pos, goal_pos, tol):
     return np.linalg.norm(ee_pos - goal_pos) < tol
 
+def check_fov(model, data, camera_name, scene_cubes):
+    valid_cubes = []
+
+    for cube_id in scene_cubes:
+        local_value = calculate_in_local(model, data, camera_name, cube_id)
+
+        if objects_in_fov(local_value):
+            valid_cubes.append(cube_id)
+
+    return valid_cubes
+    
+
 
 def pick_and_place(model,data, space_id,cube_id, ee_pos, state, state_start_time, gripper_open = 255, gripper_close = 0, tol = 0.07):
 
@@ -128,9 +140,9 @@ def pick_and_place(model,data, space_id,cube_id, ee_pos, state, state_start_time
 
     start_pos = data.xpos[start_pos_id]
     
-    target_cube_pos = data.xpos[cube_id].copy()
+    target_cube_pos = data.xipos[cube_id].copy()
     above_cube_pos = target_cube_pos + np.array([0, 0, 0.5])
-    close_cube_pos = target_cube_pos + np.array([0.01, -0.015, 0.08])
+    close_cube_pos = target_cube_pos + np.array([0, -0.015, 0.08])
 
     lift_cube_pos = start_pos + np.array([0, 0, 0.6])
 
@@ -143,7 +155,16 @@ def pick_and_place(model,data, space_id,cube_id, ee_pos, state, state_start_time
 
 
     if state == "start":
+        goal_position = lift_cube_pos
+        if reached(ee_pos,lift_cube_pos, tol):
+            if data.time - state_start_time > 2:
+                next_state = "move"
+
+
+
+    elif state == "move":
         goal_position = above_cube_pos
+
         if reached(ee_pos,above_cube_pos, tol):
             next_state = "open_gripper"
         
@@ -153,7 +174,8 @@ def pick_and_place(model,data, space_id,cube_id, ee_pos, state, state_start_time
     
     elif state == "descend_to_cube":
         goal_position = close_cube_pos
-        if reached(ee_pos, close_cube_pos,tol=0.03):
+
+        if reached(ee_pos, close_cube_pos,tol=0.04):
             next_state = "close_gripper"
         
     elif state == "close_gripper":
@@ -208,6 +230,8 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
     mujoco.mj_forward(model, data)
 
+
+    #Get the cube data
     scene_cubes = []
 
     for i in range(model.nbody):
@@ -241,7 +265,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             if objects_in_fov(local_value):
                 valid_cubes.append(cube_id)
 
-        if state =="wait":
+        if state == "wait":
             if len(valid_cubes) > 0:
                 target_cube_id = valid_cubes[0]
                 next_state = "start"
@@ -280,12 +304,13 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         
         calculate_in_local(model, data, camera_name,cube_id)
 
-
-        cv2.imshow("Sub Camera", img[:, :, ::-1])
+        SHOW_CAMERA = True
+        if SHOW_CAMERA:
+            cv2.imshow("Sub Camera", img[:, :, ::-1])
 
         
-        if cv2.waitKey(1) == 27:
-            break
+            if cv2.waitKey(1) == 27:
+                break
 
         time.sleep(0.002)
 
