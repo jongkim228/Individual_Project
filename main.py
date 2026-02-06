@@ -111,27 +111,15 @@ def calculate_in_local(model, data, camera_name, cube_id):
 
 def objects_in_fov(local):
     x, y, z = local
-    if z >= 0:
+    if z <= 0:
         return False
 
-    zz = -z
+    zz = z
     #need to change the numbers
     return (abs(x / zz) <= 0.866) and (abs(y / zz) <= 0.577)
 
 def reached(ee_pos, goal_pos, tol):
     return np.linalg.norm(ee_pos - goal_pos) < tol
-
-def check_fov(model, data, camera_name, scene_cubes):
-    valid_cubes = []
-
-    for cube_id in scene_cubes:
-        local_value = calculate_in_local(model, data, camera_name, cube_id)
-
-        if objects_in_fov(local_value):
-            valid_cubes.append(cube_id)
-
-    return valid_cubes
-    
 
 
 def pick_and_place(model,data, space_id,cube_id, ee_pos, state, state_start_time, gripper_open = 255, gripper_close = 0, tol = 0.07):
@@ -140,9 +128,9 @@ def pick_and_place(model,data, space_id,cube_id, ee_pos, state, state_start_time
 
     start_pos = data.xpos[start_pos_id]
     
-    target_cube_pos = data.xipos[cube_id].copy()
+    target_cube_pos = data.xpos[cube_id].copy()
     above_cube_pos = target_cube_pos + np.array([0, 0, 0.5])
-    close_cube_pos = target_cube_pos + np.array([0, -0.015, 0.08])
+    close_cube_pos = target_cube_pos + np.array([0.01, -0.015, 0.08])
 
     lift_cube_pos = start_pos + np.array([0, 0, 0.6])
 
@@ -155,16 +143,7 @@ def pick_and_place(model,data, space_id,cube_id, ee_pos, state, state_start_time
 
 
     if state == "start":
-        goal_position = lift_cube_pos
-        if reached(ee_pos,lift_cube_pos, tol):
-            if data.time - state_start_time > 2:
-                next_state = "move"
-
-
-
-    elif state == "move":
         goal_position = above_cube_pos
-
         if reached(ee_pos,above_cube_pos, tol):
             next_state = "open_gripper"
         
@@ -174,15 +153,14 @@ def pick_and_place(model,data, space_id,cube_id, ee_pos, state, state_start_time
     
     elif state == "descend_to_cube":
         goal_position = close_cube_pos
-
-        if reached(ee_pos, close_cube_pos,tol=0.04):
+        if reached(ee_pos, close_cube_pos,tol=0.03):
             next_state = "close_gripper"
         
     elif state == "close_gripper":
         
         data.ctrl[gripper_id] = gripper_close
         
-        if data.time - state_start_time > 0.8:
+        if data.time - state_start_time > 0.4:
             next_state = "lift"
 
     elif state == "lift":
@@ -230,10 +208,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
     mujoco.mj_forward(model, data)
 
-
-    #Get the cube data
     scene_cubes = []
-
     for i in range(model.nbody):
         name = model.body(i).name
         if name is not None and name.startswith("cube"):
@@ -242,7 +217,11 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
     
     next_state = state
     state_start_time = data.time
-    target_cube_id = None        
+    
+
+    valid_cubes = []     
+    target_cube_id = None  
+    
 
 
     while viewer.is_running():
@@ -254,28 +233,40 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         target_space_pos = data.xpos[space_id].copy()
 
         #starting position
-        goal_position = start_pos + np.array([0,0,0.5])
+        mujoco.mj_forward(model, data)
+        ee_pos = data.xpos[hand_id].copy()
+        default_position = start_pos + np.array([0,0,0.7])
+        at_default_position = reached(ee_pos, default_position, tol=1)
 
-        #filter valid cubes in fov
-        valid_cubes = []
 
-        for cube_id in scene_cubes:
-            local_value = calculate_in_local(model, data, camera_name, cube_id)
+        if state =="wait":
+            goal_position = default_position
+            
+            if at_default_position:
+                    cid = scene_cubes[0]
+                    local = calculate_in_local(model, data, camera_name, cid)
+                    
+                    for cube_id in scene_cubes:
+                        local_value = calculate_in_local(model, data, camera_name, cube_id)
 
-            if objects_in_fov(local_value):
-                valid_cubes.append(cube_id)
+                        if objects_in_fov(local_value):
+                            valid_cubes.append(cube_id)
 
-        if state == "wait":
             if len(valid_cubes) > 0:
-                target_cube_id = valid_cubes[0]
+                target_cube_id = valid_cubes.pop(0)
                 next_state = "start"
 
-        elif state != "end":
-            if target_cube_id is None:
+        elif state == "end":
+            target_cube_id = None
+
+            if len(valid_cubes) > 0:
+                target_cube_id = valid_cubes.pop(0)
+                next_state = "start"
+            else:
                 next_state = "wait"
 
-            else:
-                next_state, goal_position = pick_and_place(model,data, cube_id = target_cube_id,space_id = space_id, ee_pos=data.xpos[hand_id].copy(),state=state, state_start_time = state_start_time)
+        else:
+            next_state, goal_position = pick_and_place(model,data, cube_id = target_cube_id,space_id = space_id, ee_pos=data.xpos[hand_id].copy(),state=state, state_start_time = state_start_time)
 
         
         if next_state != state:
@@ -286,7 +277,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
         t_position = smooth_move(t_position, goal_position, speed=0.08)
         
-        inverse_kinematics(model, data, hand_id, t_position, alpha=0.2)
+        inverse_kinematics(model, data, hand_id, t_position, alpha=0.3)
 
         mujoco.mj_step(model, data)
 
@@ -294,8 +285,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
         
         renderer.update_scene(data,camera=camera_name)
-        img = renderer.render()
-        rgb = renderer.render()
+
 
         renderer.enable_depth_rendering()
         depth = renderer.render()
@@ -304,15 +294,14 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         
         calculate_in_local(model, data, camera_name,cube_id)
 
-        SHOW_CAMERA = True
-        if SHOW_CAMERA:
-            cv2.imshow("Sub Camera", img[:, :, ::-1])
+
+        #cv2.imshow("Sub Camera", img[:, :, ::-1])
 
         
-            if cv2.waitKey(1) == 27:
-                break
+        if cv2.waitKey(1) == 27:
+            break
 
-        time.sleep(0.002)
+        
 
 
 cv2.destroyAllWindows()
