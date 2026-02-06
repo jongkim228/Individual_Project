@@ -109,14 +109,32 @@ def calculate_in_local(model, data, camera_name, cube_id):
 
     return local_distance
 
-def objects_in_fov(local):
+def objects_in_fov(model,local,camera_name):
     x, y, z = local
-    if z <= 0:
+    if z >= 0:
         return False
 
-    zz = z
-    #need to change the numbers
-    return (abs(x / zz) <= 0.866) and (abs(y / zz) <= 0.577)
+    zz = -z
+    cam_id = model.camera(camera_name).id
+    vfov_deg = np.deg2rad(model.cam_fovy[cam_id]) 
+    tan_v = np.tan(vfov_deg / 2)
+
+    aspect = w / h
+
+    tan_h = tan_v * aspect
+
+    nx = x / zz
+    ny = y / zz
+
+    if abs(nx) > tan_h:
+        return False
+    
+    if abs(ny) > tan_v:
+        return False
+    
+    return True
+    
+
 
 def reached(ee_pos, goal_pos, tol):
     return np.linalg.norm(ee_pos - goal_pos) < tol
@@ -234,9 +252,10 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
         #starting position
         mujoco.mj_forward(model, data)
+        start_pos = data.xpos[start_pos_id].copy()
         ee_pos = data.xpos[hand_id].copy()
-        default_position = start_pos + np.array([0,0,0.7])
-        at_default_position = reached(ee_pos, default_position, tol=1)
+        default_position = start_pos + np.array([0,0,0.5])
+        at_default_position = reached(ee_pos, default_position, tol=0.05)
 
 
         if state =="wait":
@@ -249,8 +268,9 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                     for cube_id in scene_cubes:
                         local_value = calculate_in_local(model, data, camera_name, cube_id)
 
-                        if objects_in_fov(local_value):
+                        if objects_in_fov(model,local_value,camera_name=camera_name):
                             valid_cubes.append(cube_id)
+
 
             if len(valid_cubes) > 0:
                 target_cube_id = valid_cubes.pop(0)
@@ -275,7 +295,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         state = next_state
 
 
-        t_position = smooth_move(t_position, goal_position, speed=0.08)
+        t_position = smooth_move(t_position, goal_position, speed=0.05)
         
         inverse_kinematics(model, data, hand_id, t_position, alpha=0.3)
 
@@ -285,17 +305,19 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
         
         renderer.update_scene(data,camera=camera_name)
-
+        
+        img = renderer.render()
 
         renderer.enable_depth_rendering()
         depth = renderer.render()
+                
         renderer.disable_depth_rendering()
         distance = depth[v, u] 
         
         calculate_in_local(model, data, camera_name,cube_id)
 
 
-        #cv2.imshow("Sub Camera", img[:, :, ::-1])
+        cv2.imshow("Sub Camera", img[:, :, ::-1])
 
         
         if cv2.waitKey(1) == 27:
