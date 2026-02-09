@@ -41,6 +41,17 @@ camera_name = "camera_head"
 u = w // 2
 v = h // 2
 
+jid1 =  mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, "finger_joint1")
+jid2 = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, "finger_joint2")
+
+r1 = model.jnt_range[jid1]
+r2 = model.jnt_range[jid2]
+
+finger1_max = r1[1] - r1[0]
+finger2_max = r2[1] - r2[0]
+
+gripper_max_open  = finger1_max + finger2_max
+
 
 with mujoco.viewer.launch_passive(model, data) as viewer:
 
@@ -86,6 +97,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         ee_pos = data.xpos[hand_id].copy()
         default_position = start_pos + np.array([0,0,0.5])
         at_default_position = reached(ee_pos, default_position, tol=0.05)
+        exceeds_length = False
 
 
         if state =="wait":
@@ -104,7 +116,12 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
             if len(valid_cubes) > 0:
                 target_cube_id = valid_cubes.pop(0)
-                next_state = "start"
+                geom_id = model.body_geomadr[target_cube_id]
+                box_size = model.geom_size[geom_id]
+                if box_size[1] * 2 > gripper_max_open:
+                    exceeds_length = True
+                else:
+                    next_state = "start"
 
         elif state == "end":
             target_cube_id = None
@@ -127,7 +144,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
         t_position = smooth_move(t_position, goal_position, speed=0.05)
         
-        inverse_kinematics(model, data, hand_id, t_position, alpha=0.3)
+        inverse_kinematics(model, data,hand_id=hand_id, arm_actuator_ids=arm_actuator_ids, exceeds_length = exceeds_length, t_position=t_position, alpha=0.3)
 
         mujoco.mj_step(model, data)
 
@@ -146,10 +163,8 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         
         calculate_in_local(model, data, camera_name,cube_id)
 
-
         cv2.imshow("Sub Camera", img[:, :, ::-1])
 
-        
         if cv2.waitKey(1) == 27:
             break
 

@@ -8,7 +8,7 @@ def smooth_move(current, target, speed=0.05):
 def reached(ee_pos, goal_pos, tol):
     return np.linalg.norm(ee_pos - goal_pos) < tol
 
-
+    
 def pick_and_place(model,data, gripper_id, space_id,cube_id, ee_pos, state, state_start_time, gripper_open = 255, gripper_close = 0, tol = 0.07):
 
     start_pos_id = model.body("starting_space").id

@@ -1,7 +1,17 @@
 import numpy as np
 import mujoco
 
-def inverse_kinematics(model, data, hand_id, arm_actuator_ids, t_position, alpha = 0.3):
+def Rz(theta):
+    c, s = np.cos(theta), np.sin(theta)
+    return np.array([
+        [c,-s,0],
+        [s,c,0],
+        [0,0,1]
+    ])
+
+
+
+def inverse_kinematics(model, data, hand_id, arm_actuator_ids, t_position,exceeds_length, alpha = 0.3):
 
     mujoco.mj_kinematics(model,data)
 
@@ -9,19 +19,31 @@ def inverse_kinematics(model, data, hand_id, arm_actuator_ids, t_position, alpha
     ee_rotation = data.xmat[hand_id].reshape(3,3).copy()
  
     t_rotation = np.array([
-        [1,0,0],
-        [0,-1,0],
-        [0,0,-1]
-    ])
+            [1,0,0],
+            [0,-1,0],
+            [0,0,-1]
+        ])
+    
+    if exceeds_length:
+        t_rotation = t_rotation @ Rz(np.pi/2)
+    
 
     pos_err = t_position - ee_position
-    rot_err = t_rotation @ ee_rotation.T
 
+    rot_err = t_rotation @ ee_rotation.T
     rot_vec = 0.5 * np.array([
     rot_err[2,1] - rot_err[1,2],
     rot_err[0,2] - rot_err[2,0],
     rot_err[1,0] - rot_err[0,1]
     ])
+    
+    if exceeds_length:
+        z_current_head = ee_rotation[:,2]
+        z_t = t_rotation[:,2]
+        tilt_err = np.cross(z_current_head,z_t)
+
+        twist_err_vec = np.dot(rot_vec, z_t) * z_t
+        rot_vec = tilt_err + twist_err_vec
 
     err = np.concatenate([pos_err, rot_vec])
     
@@ -50,4 +72,4 @@ def inverse_kinematics(model, data, hand_id, arm_actuator_ids, t_position, alpha
     dq = dq_t + k_null * (N @ dq0)
 
     q_target = q_cur + alpha * dq[:7]  
-    data.ctrl[arm_actuator_ids] = q_target    
+    data.ctrl[arm_actuator_ids] = q_target
