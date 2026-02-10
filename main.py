@@ -20,7 +20,7 @@ arm_actuator_names = [
 arm_actuator_ids = np.array([model.actuator(name).id for name in arm_actuator_names])
 gripper_id = model.actuator("actuator8").id
 
-
+#define values
 hand_id = model.body("hand").id
 hand_pos = data.xpos[hand_id]
 
@@ -41,6 +41,7 @@ camera_name = "camera_head"
 u = w // 2
 v = h // 2
 
+#Max length of 2 finger joint
 jid1 =  mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, "finger_joint1")
 jid2 = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, "finger_joint2")
 
@@ -50,6 +51,7 @@ r2 = model.jnt_range[jid2]
 finger1_max = r1[1] - r1[0]
 finger2_max = r2[1] - r2[0]
 
+#Max Length of Gripper
 gripper_max_open  = finger1_max + finger2_max
 
 
@@ -60,14 +62,18 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
     renderer.disable_depth_rendering()
     distance = depth[v, u] 
 
+# Start timer
     state = 'wait'
     start_time = data.time
     t_position = data.xpos[hand_id].copy()
     goal_position = t_position.copy()
 
+# Foward Kinematics
     mujoco.mj_forward(model, data)
 
+# Get all cubes from MuJoCo
     scene_cubes = []
+    # Put in in list
     for i in range(model.nbody):
         name = model.body(i).name
         if name is not None and name.startswith("cube"):
@@ -78,9 +84,9 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
     state_start_time = data.time
     
 
+# filter cubes that are in valid space
     valid_cubes = []     
     target_cube_id = None  
-    
 
 
     while viewer.is_running():
@@ -93,15 +99,24 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
         #starting position
         mujoco.mj_forward(model, data)
+
+        #start position
         start_pos = data.xpos[start_pos_id].copy()
+        #gripper position
         ee_pos = data.xpos[hand_id].copy()
+        #default position for before pick up
         default_position = start_pos + np.array([0,0,0.5])
         at_default_position = reached(ee_pos, default_position, tol=0.05)
+
+        #long rectangular box (Y-axis)
         exceeds_length = False
 
-
+        #if state is "wait" it is ready to pick up the cube if it is on valid space
         if state =="wait":
+
+            #move gripper to default postion (centre of limited space)
             goal_position = default_position
+            
             
             if at_default_position:
                     cid = scene_cubes[0]
@@ -125,7 +140,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
         elif state == "end":
             target_cube_id = None
-
+            exceeds_length = False
             if len(valid_cubes) > 0:
                 target_cube_id = valid_cubes.pop(0)
                 next_state = "start"
