@@ -4,7 +4,7 @@ import mujoco.viewer
 import cv2
 
 from motions import pick_and_place, reached, smooth_move
-from detection import calculate_in_local, objects_in_fov
+from detection import calculate_in_local, objects_in_fov, cube_length_check
 from inverse_kinematics import inverse_kinematics
 
 
@@ -54,6 +54,23 @@ finger2_max = r2[1] - r2[0]
 #Max Length of Gripper
 gripper_max_open  = finger1_max + finger2_max
 
+#default gripper matrix
+d_rotation = np.array([
+    [1,0,0],
+    [0,-1,0],
+    [0,0,-1]
+])
+
+#Z-axis 90 rotation matrix
+c, s = np.cos(np.pi/2), np.sin(np.pi/2)
+z_90_rotation = np.array([
+        [c,-s,0],
+        [s,c,0],
+        [0,0,1]
+])
+
+rotated = d_rotation @ z_90_rotation
+
 
 with mujoco.viewer.launch_passive(model, data) as viewer:
 
@@ -87,6 +104,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 # filter cubes that are in valid space
     valid_cubes = []     
     target_cube_id = None  
+    exceeds_length = False
 
 
     while viewer.is_running():
@@ -131,12 +149,9 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
             if len(valid_cubes) > 0:
                 target_cube_id = valid_cubes.pop(0)
-                geom_id = model.body_geomadr[target_cube_id]
-                box_size = model.geom_size[geom_id]
-                if box_size[1] * 2 > gripper_max_open:
-                    exceeds_length = True
-                else:
-                    next_state = "start"
+                next_state = "start"
+
+                cube_length_check
 
         elif state == "end":
             target_cube_id = None
@@ -147,9 +162,10 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             else:
                 next_state = "wait"
 
-        else:
-            next_state, goal_position = pick_and_place(model,data, gripper_id = gripper_id,cube_id = target_cube_id,space_id = space_id, ee_pos=data.xpos[hand_id].copy(),state=state, state_start_time = state_start_time)
-
+    
+        else:    
+            next_state, goal_position = pick_and_place(model,data, gripper_id = gripper_id, cube_id = target_cube_id, space_id = space_id, ee_pos=data.xpos[hand_id].copy(),state=state, state_start_time = state_start_time)
+            
         
         if next_state != state:
             state_start_time = data.time
@@ -157,18 +173,23 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         state = next_state
 
 
-        t_position = smooth_move(t_position, goal_position, speed=0.05)
+        t_position = smooth_move(t_position, goal_position, speed=0.1)
         
-        inverse_kinematics(model, data,hand_id=hand_id, arm_actuator_ids=arm_actuator_ids, exceeds_length = exceeds_length, t_position=t_position, alpha=0.3)
+
+        if exceeds_length == False:
+            t_rotation = d_rotation
+            inverse_kinematics(model,data, hand_id, t_position, t_rotation, arm_actuator_ids,exceeds_length)
+        else:
+            t_rotation = rotated
+            inverse_kinematics(model,data, hand_id, t_position, t_rotation, arm_actuator_ids,exceeds_length)
 
         mujoco.mj_step(model, data)
 
         viewer.sync()
 
-        
         renderer.update_scene(data,camera=camera_name)
         
-        img = renderer.render()
+        #img = renderer.render()
 
         renderer.enable_depth_rendering()
         depth = renderer.render()
@@ -178,12 +199,10 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         
         calculate_in_local(model, data, camera_name,cube_id)
 
-        cv2.imshow("Sub Camera", img[:, :, ::-1])
+        #cv2.imshow("Sub Camera", img[:, :, ::-1])
 
         if cv2.waitKey(1) == 27:
             break
-
-        
 
 
 cv2.destroyAllWindows()

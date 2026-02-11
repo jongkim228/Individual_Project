@@ -1,32 +1,14 @@
 import numpy as np
 import mujoco
 
-def Rz(theta):
-    c, s = np.cos(theta), np.sin(theta)
-    return np.array([
-        [c,-s,0],
-        [s,c,0],
-        [0,0,1]
-    ])
 
-
-
-def inverse_kinematics(model, data, hand_id, arm_actuator_ids, t_position,exceeds_length, alpha = 0.3):
+def inverse_kinematics(model, data, hand_id,t_position, t_rotation, arm_actuator_ids, exceeds_length, alpha = 0.3):
 
     mujoco.mj_kinematics(model,data)
 
     ee_position = data.xpos[hand_id].copy()
     ee_rotation = data.xmat[hand_id].reshape(3,3).copy()
- 
-    t_rotation = np.array([
-            [1,0,0],
-            [0,-1,0],
-            [0,0,-1]
-        ])
-    
-    if exceeds_length:
-        t_rotation = t_rotation @ Rz(np.pi/2)
-    
+
 
     pos_err = t_position - ee_position
 
@@ -47,9 +29,12 @@ def inverse_kinematics(model, data, hand_id, arm_actuator_ids, t_position,exceed
 
     err = np.concatenate([pos_err, rot_vec])
     
+    #jacobian position
     jac_pos = np.zeros((3, model.nv))
+    #jacobian rotation
     jac_rot = np.zeros((3, model.nv))
     point = data.xpos[hand_id]
+    #jacobian calculation
     mujoco.mj_jac(model,data,jac_pos, jac_rot, point,hand_id)
     J = np.vstack([jac_pos, jac_rot])
 

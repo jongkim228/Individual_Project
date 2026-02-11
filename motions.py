@@ -1,7 +1,7 @@
 import numpy as np
 import mujoco
 
-def smooth_move(current, target, speed=0.05):
+def smooth_move(current, target, speed=0.1):
     return current + speed * (target - current)
 
 
