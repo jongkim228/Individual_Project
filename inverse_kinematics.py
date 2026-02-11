@@ -19,13 +19,6 @@ def inverse_kinematics(model, data, hand_id,t_position, t_rotation, arm_actuator
     rot_err[1,0] - rot_err[0,1]
     ])
     
-    if exceeds_length:
-        z_current_head = ee_rotation[:,2]
-        z_t = t_rotation[:,2]
-        tilt_err = np.cross(z_current_head,z_t)
-
-        twist_err_vec = np.dot(rot_vec, z_t) * z_t
-        rot_vec = tilt_err + twist_err_vec
 
     err = np.concatenate([pos_err, rot_vec])
     

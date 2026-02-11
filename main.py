@@ -126,9 +126,6 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         default_position = start_pos + np.array([0,0,0.5])
         at_default_position = reached(ee_pos, default_position, tol=0.05)
 
-        #long rectangular box (Y-axis)
-        exceeds_length = False
-
         #if state is "wait" it is ready to pick up the cube if it is on valid space
         if state =="wait":
 
@@ -144,14 +141,14 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                         local_value = calculate_in_local(model, data, camera_name, cube_id)
 
                         if objects_in_fov(model,local_value,camera_name=camera_name,height=h,width=w):
-                            valid_cubes.append(cube_id)
+                            valid_cubes.append(cid)
 
-
+        #Box on valid space
             if len(valid_cubes) > 0:
                 target_cube_id = valid_cubes.pop(0)
+                exceeds_length = cube_length_check(model,target_cube_id,gripper_max_open)
                 next_state = "start"
-
-                cube_length_check
+                #check box length to grab it
 
         elif state == "end":
             target_cube_id = None
@@ -164,7 +161,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
     
         else:    
-            next_state, goal_position = pick_and_place(model,data, gripper_id = gripper_id, cube_id = target_cube_id, space_id = space_id, ee_pos=data.xpos[hand_id].copy(),state=state, state_start_time = state_start_time)
+            next_state, goal_position = pick_and_place(model,data,exceeds_length, gripper_id = gripper_id, cube_id = target_cube_id, space_id = space_id, ee_pos=data.xpos[hand_id].copy(),state=state, state_start_time = state_start_time)
             
         
         if next_state != state:
@@ -182,6 +179,11 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         else:
             t_rotation = rotated
             inverse_kinematics(model,data, hand_id, t_position, t_rotation, arm_actuator_ids,exceeds_length)
+
+        if state == "close_gripper":
+            data.ctrl[gripper_id] = 0 # 0
+        elif state == "open_gripper":
+            data.ctrl[gripper_id] = 255
 
         mujoco.mj_step(model, data)
 

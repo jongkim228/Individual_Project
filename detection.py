@@ -24,10 +24,10 @@ def calculate_in_local(model, data, camera_name, cube_id):
 
 def objects_in_fov(model,local,camera_name,height,width):
     x, y, z = local
-    if z <= 0:
+    if z >= 0:
         return False
 
-    zz = z
+    zz = -z
     cam_id = model.camera(camera_name).id
     vfov_deg = np.deg2rad(model.cam_fovy[cam_id]) 
     tan_v = np.tan(vfov_deg / 2)

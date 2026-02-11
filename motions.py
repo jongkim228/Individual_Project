@@ -9,7 +9,7 @@ def reached(ee_pos, goal_pos, tol):
     return np.linalg.norm(ee_pos - goal_pos) < tol
 
     
-def pick_and_place(model,data, gripper_id, space_id,cube_id, ee_pos, state, state_start_time, gripper_open = 255, gripper_close = 0, tol = 0.07):
+def pick_and_place(model,data, exceeds_length,gripper_id, space_id,cube_id, ee_pos, state, state_start_time, gripper_open = 255, gripper_close = 0, tol = 0.07):
 
     start_pos_id = model.body("starting_space").id
 
@@ -17,7 +17,12 @@ def pick_and_place(model,data, gripper_id, space_id,cube_id, ee_pos, state, stat
     
     target_cube_pos = data.xpos[cube_id].copy()
     above_cube_pos = target_cube_pos + np.array([0, 0, 0.5])
-    close_cube_pos = target_cube_pos + np.array([0.01, -0.015, 0.08])
+
+    if exceeds_length:
+        close_cube_pos = target_cube_pos + np.array([0.01, 0, 0.08])
+    else:
+        close_cube_pos = target_cube_pos + np.array([0.01, -0.015, 0.08])
+
 
     lift_cube_pos = start_pos + np.array([0, 0, 0.6])
 
@@ -28,26 +33,35 @@ def pick_and_place(model,data, gripper_id, space_id,cube_id, ee_pos, state, stat
     next_state = state
     goal_position = ee_pos.copy()
 
-
+    # Start the task
     if state == "start":
+        # move gripper to above the cube
         goal_position = above_cube_pos
+        # change the state to open the gripper
         if reached(ee_pos,above_cube_pos, tol):
             next_state = "open_gripper"
         
+    #open gripper    
     elif state == "open_gripper":
         data.ctrl[gripper_id] = gripper_open
-        next_state = "descend_to_cube"
+        #wait until it opens the gripper and approach to the cube
+        if data.time - state_start_time > 0.8:
+            next_state = "descend_to_cube"
     
     elif state == "descend_to_cube":
         goal_position = close_cube_pos
-        if reached(ee_pos, close_cube_pos,tol=0.03):
+        if reached(ee_pos, close_cube_pos,tol=0.04):
             next_state = "close_gripper"
         
     elif state == "close_gripper":
         
         data.ctrl[gripper_id] = gripper_close
+        print("time:", data.time,
+      "state:", state,
+      "gripper ctrl:", data.ctrl[gripper_id])
+
         
-        if data.time - state_start_time > 0.4:
+        if data.time - state_start_time > 1:
             next_state = "lift"
 
     elif state == "lift":
