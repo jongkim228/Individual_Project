@@ -20,6 +20,8 @@ arm_actuator_names = [
 arm_actuator_ids = np.array([model.actuator(name).id for name in arm_actuator_names])
 gripper_id = model.actuator("actuator8").id
 
+
+
 #define values
 hand_id = model.body("hand").id
 hand_pos = data.xpos[hand_id]
@@ -175,23 +177,20 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
         if exceeds_length == False:
             t_rotation = d_rotation
-            inverse_kinematics(model,data, hand_id, t_position, t_rotation, arm_actuator_ids,exceeds_length)
         else:
             t_rotation = rotated
-            inverse_kinematics(model,data, hand_id, t_position, t_rotation, arm_actuator_ids,exceeds_length)
 
-        if state == "close_gripper":
-            data.ctrl[gripper_id] = 0 # 0
-        elif state == "open_gripper":
-            data.ctrl[gripper_id] = 255
+        inverse_kinematics(model,data, hand_id, t_position, t_rotation, arm_actuator_ids,exceeds_length)
+
 
         mujoco.mj_step(model, data)
+
 
         viewer.sync()
 
         renderer.update_scene(data,camera=camera_name)
         
-        #img = renderer.render()
+        img = renderer.render()
 
         renderer.enable_depth_rendering()
         depth = renderer.render()
@@ -201,7 +200,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         
         calculate_in_local(model, data, camera_name,cube_id)
 
-        #cv2.imshow("Sub Camera", img[:, :, ::-1])
+        cv2.imshow("Sub Camera", img[:, :, ::-1])
 
         if cv2.waitKey(1) == 27:
             break
