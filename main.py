@@ -34,6 +34,9 @@ start_pos = data.xpos[start_pos_id]
 cube_pos = data.xpos[cube_id]
 target_space_pos = data.xpos[space_id].copy()
 
+gripper_site_id = data.site("gripper").id
+
+
 #Camera Rendering
 h, w = 320, 480
 renderer = mujoco.Renderer(model, height=h, width=w)
@@ -85,7 +88,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
     state = 'wait'
     start_time = data.time
     t_position = data.xpos[hand_id].copy()
-    goal_position = t_position.copy()
+    goal_position = t_position
 
 # Foward Kinematics
     mujoco.mj_forward(model, data)
@@ -123,7 +126,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         #start position
         start_pos = data.xpos[start_pos_id].copy()
         #gripper position
-        ee_pos = data.xpos[hand_id].copy()
+        ee_pos = data.site_xpos[gripper_site_id].copy()
         #default position for before pick up
         default_position = start_pos + np.array([0,0,0.5])
         at_default_position = reached(ee_pos, default_position, tol=0.05)
@@ -163,7 +166,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
     
         else:    
-            next_state, goal_position = pick_and_place(model,data,exceeds_length, gripper_id = gripper_id, cube_id = target_cube_id, space_id = space_id, ee_pos=data.xpos[hand_id].copy(),state=state, state_start_time = state_start_time)
+            next_state, goal_position = pick_and_place(model,data,exceeds_length,t_rotation, gripper_id = gripper_id, cube_id = target_cube_id, space_id = space_id, ee_pos=data.xpos[hand_id].copy(),state=state, state_start_time = state_start_time)
             
         
         if next_state != state:
@@ -188,9 +191,9 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
         viewer.sync()
 
-        renderer.update_scene(data,camera=camera_name)
+        #renderer.update_scene(data,camera=camera_name)
         
-        img = renderer.render()
+        #img = renderer.render()
 
         renderer.enable_depth_rendering()
         depth = renderer.render()
@@ -200,7 +203,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         
         calculate_in_local(model, data, camera_name,cube_id)
 
-        cv2.imshow("Sub Camera", img[:, :, ::-1])
+        #cv2.imshow("Sub Camera", img[:, :, ::-1])
 
         if cv2.waitKey(1) == 27:
             break
