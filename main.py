@@ -147,6 +147,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         diff = gripper_pos - cube_pos
 
 
+
         #if state is "wait" it is ready to pick up the cube if it is on valid space
         if state =="wait":
 
@@ -206,8 +207,8 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         else:
             t_rotation = rotated
 
-        for _ in range(10): 
-            inverse_kinematics(model, data, gripper_site_id, t_position, t_rotation, arm_actuator_ids, exceeds_length, alpha=0.1)
+        for _ in range(100): 
+            inverse_kinematics(model, data, gripper_site_id, t_position, t_rotation, arm_actuator_ids, exceeds_length, alpha=0.5)
             mujoco.mj_kinematics(model, data)
 
         mujoco.mj_step(model, data)

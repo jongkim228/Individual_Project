@@ -12,6 +12,10 @@ def inverse_kinematics(model, data, gripper_site_id,t_position, t_rotation, arm_
 
     pos_err = t_position - ee_position
 
+    pos_err[0] *= 1.0
+    pos_err[1] *= 3.0
+    pos_err[2] *= 1.0
+
     rot_err = t_rotation @ ee_rotation.T
     rot_vec = 0.5 * np.array([
     rot_err[2,1] - rot_err[1,2],

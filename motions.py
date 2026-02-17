@@ -33,7 +33,7 @@ def pick_and_place(    model,
     above_target_pos = target_cube_pos + above
 
     # coordinate for box pick up
-    pick = np.array([0.3,0,0.03])
+    pick = np.array([0,0,- 0.025])
     pick_target_pos = target_cube_pos + pick
 
     # gripper id and control range
