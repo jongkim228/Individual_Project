@@ -2,12 +2,12 @@ import numpy as np
 import mujoco
 
 
-def inverse_kinematics(model, data, hand_id,t_position, t_rotation, arm_actuator_ids, exceeds_length, alpha = 0.3):
+def inverse_kinematics(model, data, gripper_site_id,t_position, t_rotation, arm_actuator_ids, exceeds_length, alpha = 0.1):
 
     mujoco.mj_kinematics(model,data)
 
-    ee_position = data.xpos[hand_id].copy()
-    ee_rotation = data.xmat[hand_id].reshape(3,3).copy()
+    ee_position = data.site_xpos[gripper_site_id].copy()
+    ee_rotation = data.site_xmat[gripper_site_id].reshape(3,3).copy()
 
 
     pos_err = t_position - ee_position
@@ -26,9 +26,8 @@ def inverse_kinematics(model, data, hand_id,t_position, t_rotation, arm_actuator
     jac_pos = np.zeros((3, model.nv))
     #jacobian rotation
     jac_rot = np.zeros((3, model.nv))
-    point = data.xpos[hand_id]
     #jacobian calculation
-    mujoco.mj_jac(model,data,jac_pos, jac_rot, point,hand_id)
+    mujoco.mj_jacSite(model,data,jac_pos, jac_rot, gripper_site_id)
     J = np.vstack([jac_pos, jac_rot])
 
     JJt = J @ J.T

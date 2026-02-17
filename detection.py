@@ -1,20 +1,22 @@
 import numpy as np
 import mujoco
 
-def cube_length_check(model, target_cube_id,gripper_max_open):
-    geom_id = model.body_geomadr[target_cube_id]
-    box_size = model.geom_size[geom_id]
+def cube_length_check(model, target_geom_id,gripper_max_open):
+    box_size = model.geom_size[target_geom_id]
+
     if box_size[1] * 2 > gripper_max_open:
         return 
     else: 
         return False
 
 
-def calculate_in_local(model, data, camera_name, cube_id):
+def calculate_in_local(model, data, camera_name, target_geom_id):
     mujoco.mj_forward(model, data)
     camera_id = model.camera(camera_name).id
+
     world_cam = data.cam_xpos[camera_id]
-    world_obj = data.xpos[cube_id]
+
+    world_obj = data.geom_xpos[target_geom_id]
 
     camera_rot = data.cam_xmat[camera_id].reshape(3,3)
 

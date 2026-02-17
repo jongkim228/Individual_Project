@@ -22,19 +22,19 @@ gripper_id = model.actuator("actuator8").id
 
 
 
-#define values
-hand_id = model.body("hand").id
-hand_pos = data.xpos[hand_id]
+# box xite
+cube_site = model.site("cube1_target").id
 
-cube_id = model.body("cube1").id
+
+# space
 space_id = model.body("target_space").id
 start_pos_id = model.body("starting_space").id
-
-start_pos = data.xpos[start_pos_id]
-cube_pos = data.xpos[cube_id]
+start_pos = data.xpos[start_pos_id].copy()
 target_space_pos = data.xpos[space_id].copy()
 
-gripper_site_id = data.site("gripper").id
+# gripper site
+gripper_site_id = model.site("gripper").id
+
 
 
 #Camera Rendering
@@ -87,11 +87,21 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 # Start timer
     state = 'wait'
     start_time = data.time
-    t_position = data.xpos[hand_id].copy()
+    t_position = data.site_xpos[gripper_site_id].copy()
     goal_position = t_position
 
 # Foward Kinematics
     mujoco.mj_forward(model, data)
+
+    print("gripper site 월드좌표:", data.site_xpos[gripper_site_id])
+    print("left_finger 월드좌표:", data.xpos[model.body("left_finger").id])
+    print("right_finger 월드좌표:", data.xpos[model.body("right_finger").id])
+    # 두 핑거의 중간값이 gripper site와 일치해야 함
+    finger_mid = (data.xpos[model.body("left_finger").id] + data.xpos[model.body("right_finger").id]) / 2
+    print("핑거 중간점:", finger_mid)
+    print("차이:", data.site_xpos[gripper_site_id] - finger_mid)
+            
+
 
 # Get all cubes from MuJoCo
     scene_cubes = []
@@ -99,7 +109,8 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
     for i in range(model.nbody):
         name = model.body(i).name
         if name is not None and name.startswith("cube"):
-            scene_cubes.append(i)
+            g_id = model.body_geomadr[i]
+            scene_cubes.append(g_id)
 
     
     next_state = state
@@ -114,8 +125,8 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
     while viewer.is_running():
 
+
         current_time = data.time - start_time
-        cube_pos = data.xpos[cube_id].copy()
         cam_id = model.camera(camera_name).id
         fovy_deg = float(model.cam_fovy[cam_id])
         target_space_pos = data.xpos[space_id].copy()
@@ -131,6 +142,11 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         default_position = start_pos + np.array([0,0,0.5])
         at_default_position = reached(ee_pos, default_position, tol=0.05)
 
+        gripper_pos = data.site_xpos[gripper_site_id].copy()
+        cube_pos = data.site_xpos[cube_site].copy()
+        diff = gripper_pos - cube_pos
+
+
         #if state is "wait" it is ready to pick up the cube if it is on valid space
         if state =="wait":
 
@@ -141,7 +157,8 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             if at_default_position:
                     cid = scene_cubes[0]
                     local = calculate_in_local(model, data, camera_name, cid)
-                    
+                    x, y, z = local
+                    print(f"상자 로컬 좌표 -> x: {x:.2f}, y: {y:.2f}, z: {z:.2f}")
                     for cube_id in scene_cubes:
                         local_value = calculate_in_local(model, data, camera_name, cube_id)
 
@@ -153,20 +170,24 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                 target_cube_id = valid_cubes.pop(0)
                 exceeds_length = cube_length_check(model,target_cube_id,gripper_max_open)
                 next_state = "start"
-                #check box length to grab it
+                
 
         elif state == "end":
             target_cube_id = None
             exceeds_length = False
             if len(valid_cubes) > 0:
                 target_cube_id = valid_cubes.pop(0)
-                next_state = "start"
-            else:
-                next_state = "wait"
+
+            exceeds_length = cube_length_check(model, target_cube_id , gripper_max_open)
+            next_state = "start"
+            state_start_time = data.time
 
     
         else:    
-            next_state, goal_position = pick_and_place(model,data,exceeds_length,t_rotation, gripper_id = gripper_id, cube_id = target_cube_id, space_id = space_id, ee_pos=data.xpos[hand_id].copy(),state=state, state_start_time = state_start_time)
+            next_state, goal_position = pick_and_place(
+        model, data, exceeds_length, t_rotation, gripper_id, space_id, 
+        cube_site, ee_pos, state, state_start_time
+    )
             
         
         if next_state != state:
@@ -174,8 +195,10 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
         state = next_state
 
-
-        t_position = smooth_move(t_position, goal_position, speed=0.1)
+        if state == "close_gripper":
+            pass
+        else:
+            t_position = smooth_move(t_position, goal_position, speed=0.1)
         
 
         if exceeds_length == False:
@@ -183,8 +206,9 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         else:
             t_rotation = rotated
 
-        inverse_kinematics(model,data, hand_id, t_position, t_rotation, arm_actuator_ids,exceeds_length)
-
+        for _ in range(10): 
+            inverse_kinematics(model, data, gripper_site_id, t_position, t_rotation, arm_actuator_ids, exceeds_length, alpha=0.1)
+            mujoco.mj_kinematics(model, data)
 
         mujoco.mj_step(model, data)
 
@@ -201,7 +225,6 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         renderer.disable_depth_rendering()
         distance = depth[v, u] 
         
-        calculate_in_local(model, data, camera_name,cube_id)
 
         #cv2.imshow("Sub Camera", img[:, :, ::-1])
 

@@ -15,7 +15,7 @@ def pick_and_place(    model,
     t_rotation,
     gripper_id,
     space_id,
-    cube_id,
+    target_site_id,
     ee_pos,
     state,
     state_start_time,
@@ -26,16 +26,16 @@ def pick_and_place(    model,
     start_pos = data.xpos[start_pos_id]
     
     # get target box coordinate
-    target_cube_pos = data.xpos[cube_id].copy()
+    target_cube_pos = data.site_xpos[target_site_id].copy()
 
     # coordinate for above target box
-    above = np.array([0, 0, 0.65])
+    above = np.array([0, 0, 0.1])
     above_target_pos = target_cube_pos + above
 
     # coordinate for box pick up
-    pick = np.array([0,0,0.095])
+    pick = np.array([0.3,0,0.03])
     pick_target_pos = target_cube_pos + pick
-    
+
     # gripper id and control range
     gripper_id = model.actuator("actuator8").id
     gripper_range = model.actuator(gripper_id).ctrlrange
@@ -67,14 +67,31 @@ def pick_and_place(    model,
             next_state = "descend_to_cube"
     
     elif state == "descend_to_cube":
+        current = ee_pos.copy()
         goal_position = pick_target_pos
-        if reached(current, goal_position,tol=0.04):
-            if data.time - state_start_time > 0.2:
+        distance = np.linalg.norm(current - goal_position)
+        diff = current - goal_position
+        
+        print(f"\n[DESCEND 상세]")
+        print(f"  목표 (상자 중심): {goal_position}")
+        print(f"  현재 (site): {current}")
+        print(f"  차이:")
+        print(f"    X: {diff[0]*100:+.2f}cm")
+        print(f"    Y: {diff[1]*100:+.2f}cm")
+        print(f"    Z: {diff[2]*100:+.2f}cm")
+        print(f"  총 거리: {distance*100:.2f}cm")
+        
+        if reached(current, goal_position, tol=0.03):
+            if data.time - state_start_time > 1.0:
+                print(f"[DESCEND] Close로 전환! (최종 거리: {distance*100:.2f}cm)")
                 next_state = "close_gripper"
 
+
     elif state == "close_gripper":
+        goal_position = current
         data.ctrl[gripper_id] = gripper_close
-        if data.time - state_start_time > 0.4:
+        
+        if data.time - state_start_time > 1:
             next_state = "lift"
 
     elif state == "lift":
@@ -83,47 +100,6 @@ def pick_and_place(    model,
         if reached(current,goal_position,tol):
             print("finish")
 
-
-
-            
-
-        
-    # elif state == "close_gripper":
-    #     goal_position == ee_pos.copy()
-    #     data.ctrl[gripper_id] = gripper_close
-    #     print("time:", data.time,
-    #   "state:", state,
-    #   "gripper ctrl:", data.ctrl[gripper_id])
-
-        
-    #     if data.time - state_start_time > 1:
-    #         next_state = "lift"
-
-    # elif state == "lift":
-    #     goal_position = lift_cube_pos
-    #     if reached(ee_pos,lift_cube_pos,tol):
-    #         next_state = "move_to_target"
-    
-    # elif state == "move_to_target":
-    #     goal_position = above_target_pos
-    #     if reached(ee_pos,above_target_pos,tol):
-    #         next_state = "descend_to_target"
-        
-    # elif state == "descend_to_target":
-    #     goal_position = close_target_pos
-    #     if reached(ee_pos,close_target_pos,tol):
-    #         data.ctrl[gripper_id] = gripper_open
-    #         next_state = "move_up"
-        
-    # elif state == "move_up":
-    #     goal_position = above_target_pos
-    #     if reached(ee_pos,above_target_pos,tol):
-    #         next_state = "default"
-        
-    # elif state == "default":
-    #     goal_position = start_pos + np.array([0,0,0.5])
-    #     if reached(ee_pos,start_pos + np.array([0,0,0.5]),tol):
-    #         next_state = "end"
 
 
     return next_state, goal_position
