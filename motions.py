@@ -15,25 +15,26 @@ def pick_and_place(    model,
     t_rotation,
     gripper_id,
     space_id,
-    target_site_id,
+    target_pos,
     ee_pos,
     state,
     state_start_time,
-    tol=0.07):
+    tol=0.03):
 
     start_pos_id = model.body("starting_space").id
+
 
     start_pos = data.xpos[start_pos_id]
     
     # get target box coordinate
-    target_cube_pos = data.site_xpos[target_site_id].copy()
+    target_cube_pos = target_pos.copy()
 
     # coordinate for above target box
-    above = np.array([0, 0, 0.1])
+    above = np.array([0, 0, 0.5])
     above_target_pos = target_cube_pos + above
 
     # coordinate for box pick up
-    pick = np.array([0,0,- 0.025])
+    pick = np.array([0, 0, -0.02])
     pick_target_pos = target_cube_pos + pick
 
     # gripper id and control range
@@ -46,6 +47,10 @@ def pick_and_place(    model,
 
     #default postion when gripper picked up the box
     lift_cube_pos = start_pos + np.array([0, 0, 0.6])
+
+    #Before drop
+    lift_cube_pos = target_pos + np.array([0, 0, 0.6])
+    drop_cube_ps = target_pos + np.array([0, 0, 0.1])
 
     next_state = state
     goal_position = ee_pos.copy()
@@ -69,37 +74,49 @@ def pick_and_place(    model,
     elif state == "descend_to_cube":
         current = ee_pos.copy()
         goal_position = pick_target_pos
-        distance = np.linalg.norm(current - goal_position)
-        diff = current - goal_position
         
-        print(f"\n[DESCEND 상세]")
-        print(f"  목표 (상자 중심): {goal_position}")
-        print(f"  현재 (site): {current}")
-        print(f"  차이:")
-        print(f"    X: {diff[0]*100:+.2f}cm")
-        print(f"    Y: {diff[1]*100:+.2f}cm")
-        print(f"    Z: {diff[2]*100:+.2f}cm")
-        print(f"  총 거리: {distance*100:.2f}cm")
-        
-        if reached(current, goal_position, tol=0.03):
-            if data.time - state_start_time > 1.0:
-                print(f"[DESCEND] Close로 전환! (최종 거리: {distance*100:.2f}cm)")
+        if reached(current, goal_position, tol=0.02):
+            if data.time - state_start_time > 1.5:
                 next_state = "close_gripper"
 
 
     elif state == "close_gripper":
         goal_position = current
-        data.ctrl[gripper_id] = gripper_close
+        current_ctrl = data.ctrl[gripper_id]
+        data.ctrl[gripper_id] = current_ctrl + 0.05 * (gripper_close - current_ctrl)
         
-        if data.time - state_start_time > 1:
+        if data.time - state_start_time > 1.5:
             next_state = "lift"
 
     elif state == "lift":
         data.ctrl[gripper_id] = gripper_close
         goal_position = lift_cube_pos
         if reached(current,goal_position,tol):
-            print("finish")
+            next_state = "move"
 
+    elif state == "move":
+        goal_position = lift_cube_pos
+        if reached(current,goal_position,tol):
+            next_state = "before_drop"
+
+    elif state == "before_drop":
+        goal_position = above_target_pos
+        if reached(current,goal_position,tol):
+            next_state = "drop"
+
+    elif state == "before_drop":
+        goal_position = above_target_pos
+        if reached(current,goal_position,tol):
+            next_state = "drop"
+
+    elif state == "drop":
+        goal_position = drop_cube_ps
+        if reached(current,goal_position,tol):
+            next_state = "open_gripper"
+
+    elif state == "open_gripper":
+        data.ctrl[gripper_id] = gripper_close
+        next_state = "end"
 
 
     return next_state, goal_position

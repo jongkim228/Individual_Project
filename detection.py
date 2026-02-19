@@ -4,10 +4,13 @@ import mujoco
 def cube_length_check(model, target_geom_id,gripper_max_open):
     box_size = model.geom_size[target_geom_id]
 
-    if box_size[1] * 2 > gripper_max_open:
-        return 
+    if box_size[2] > box_size[0] * 3:
+        return "tall"
+
+    elif box_size[1] * 2 > gripper_max_open:
+        return "long"
     else: 
-        return False
+        return "default"
 
 
 def calculate_in_local(model, data, camera_name, target_geom_id):

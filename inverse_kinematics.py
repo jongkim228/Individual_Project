@@ -2,19 +2,18 @@ import numpy as np
 import mujoco
 
 
-def inverse_kinematics(model, data, gripper_site_id,t_position, t_rotation, arm_actuator_ids, exceeds_length, alpha = 0.1):
+def inverse_kinematics(model, data, gripper_site_id,t_position, t_rotation, arm_actuator_ids, exceeds_length, alpha = 0.3):
 
     mujoco.mj_kinematics(model,data)
 
     ee_position = data.site_xpos[gripper_site_id].copy()
     ee_rotation = data.site_xmat[gripper_site_id].reshape(3,3).copy()
 
+    actuator_weights = np.array([1,1,1,0.5,1,1,1])
+    weights_inverse = np.diag(1 / actuator_weights)
+
 
     pos_err = t_position - ee_position
-
-    pos_err[0] *= 1.0
-    pos_err[1] *= 3.0
-    pos_err[2] *= 1.0
 
     rot_err = t_rotation @ ee_rotation.T
     rot_vec = 0.5 * np.array([
@@ -24,7 +23,7 @@ def inverse_kinematics(model, data, gripper_site_id,t_position, t_rotation, arm_
     ])
     
 
-    err = np.concatenate([pos_err, rot_vec])
+    err = np.concatenate([pos_err, rot_vec * 2])
     
     #jacobian position
     jac_pos = np.zeros((3, model.nv))
@@ -32,23 +31,23 @@ def inverse_kinematics(model, data, gripper_site_id,t_position, t_rotation, arm_
     jac_rot = np.zeros((3, model.nv))
     #jacobian calculation
     mujoco.mj_jacSite(model,data,jac_pos, jac_rot, gripper_site_id)
-    J = np.vstack([jac_pos, jac_rot])
+    J_full = np.vstack([jac_pos, jac_rot])
+    J = J_full[:,:7]
 
-    JJt = J @ J.T
-
+    damping = 0.05
     #pseudo inverse
-    j_pse_inverse = J.T @ np.linalg.solve(JJt + 0.01 * np.eye(6), np.eye(6))
+    j_pse_inverse = weights_inverse @ J.T @ np.linalg.solve(J @ weights_inverse @ J.T + damping * np.eye(6), np.eye(6))
 
     dq_t = j_pse_inverse @ err
 
-    q_nominal = np.array([0.0, -0.6, 0.0, -2.2, 0.0, 1.6, 0.8])
+    q_nominal = np.array([0.0, -0.6, 0.0, -1.5, 0.0, 1.6, 0.8])
     q_cur = data.qpos[:7].copy()
 
-    N = np.eye(model.nv) - j_pse_inverse @ J
+    N = np.eye(7) - j_pse_inverse @ J
 
-    k_null = 0.5
-    dq0 = np.zeros(model.nv)
-    dq0[:7] = (q_nominal - q_cur)
+    k_null = 0.15
+    dq0 = np.zeros(7)
+    dq0[:7] = q_nominal - q_cur
 
     dq = dq_t + k_null * (N @ dq0)
 
