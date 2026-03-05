@@ -2,10 +2,12 @@ import numpy as np
 import mujoco
 import mujoco.viewer
 import cv2
+import csv
 
 from motions import pick_and_place, reached, smooth_move
 from detection import calculate_in_local, objects_in_fov, cube_length_check
 from inverse_kinematics import inverse_kinematics
+from packing import box_packing
 
 
 model = mujoco.MjModel.from_xml_path("mujoco_menagerie/franka_emika_panda/scene.xml")
@@ -84,6 +86,8 @@ y_90_rotation = np.array([
 long_rotated = d_rotation @ z_90_rotation
 tall_rotated = d_rotation @ y_90_rotation
 
+num_box = 0
+
 
 with mujoco.viewer.launch_passive(model, data) as viewer:
 
@@ -103,29 +107,29 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
 
 # Get all cubes from MuJoCo
-    scene_cubes = []
+    scene_boxes = []
     # Put in in list
     for i in range(model.nbody):
         name = model.body(i).name
         if name is not None and name.startswith("cube"):
-            g_id = model.body_geomadr[i]
-            scene_cubes.append(g_id)
-
-    
+            scene_boxes.append(i)
+  
     next_state = state
     state_start_time = data.time
     
 
 # filter cubes that are in valid space
-    valid_cubes = []     
-    target_cube_id = None  
+    valid_boxes = []     
+    target_box_id = None  
     exceeds_length = None
+    target_pack_pos = None
+    packing_result = []
 
 
 
     while viewer.is_running():
 
-
+        #Timer
         current_time = data.time - start_time
         cam_id = model.camera(camera_name).id
         fovy_deg = float(model.cam_fovy[cam_id])
@@ -143,56 +147,91 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         at_default_position = reached(ee_pos, default_position, tol=0.05)
 
         gripper_pos = data.site_xpos[gripper_site_id].copy()
-        cube_pos = data.xpos[cube_body_id].copy()
+        box_pos = data.geom_xpos[cube_body_id].copy()
 
 
         #if state is "wait" it is ready to pick up the cube if it is on valid space
-        if state =="wait":
+        if state == "wait":
 
             #move gripper to default postion (centre of limited space)
             goal_position = default_position
-            
-            
-            if at_default_position:
-                    cid = scene_cubes[0]
-                    local = calculate_in_local(model, data, camera_name, cid)
-                    x, y, z = local
-                    print("Box Detected")
-                    for cube_id in scene_cubes:
-                        local_value = calculate_in_local(model, data, camera_name, cube_id)
 
-                        if objects_in_fov(model,local_value,camera_name=camera_name,height=h,width=w):
-                            valid_cubes.append(cid)
+            if at_default_position:
+                for scene_box in scene_boxes:
+                    box_geom_id = model.body_geomadr[scene_box]
+                    local_value = calculate_in_local(model, data, camera_name, box_geom_id)
+
+                    if objects_in_fov(model,local_value,camera_name=camera_name, height=h,width=w):
+        
+                        valid_boxes.append(scene_box)
+                        num_box += 1
+
+                print(f"{num_box} boxes have detected")
 
         #Box on valid space
-            if len(valid_cubes) > 0:
-                target_cube_id = valid_cubes.pop(0)
-                exceeds_length = cube_length_check(model,target_cube_id,gripper_max_open)
+            if len(valid_boxes) > 0:
+                packing_result = box_packing(data, model, valid_boxes)
+                target_pack_pos = packing_result.pop(0)
+                target_box_id = valid_boxes.pop(0)
+
+                valid_box_geom = model.body_geomadr[target_box_id]
+
+                #check the box length is over the gripper open range
+                exceeds_length = cube_length_check(model,valid_box_geom,gripper_max_open)
+
                 next_state = "start"
                 
 
         elif state == "end":
-            target_cube_id = None
-            exceeds_length = False
-            if len(valid_cubes) > 0:
-                target_cube_id = valid_cubes.pop(0)
+            if len(valid_boxes) > 0:
+                packing_result = box_packing(data, model, valid_boxes)
+                target_box_id = valid_boxes.pop(0)
+                target_pack_pos = packing_result.pop(0)
 
-            exceeds_length = cube_length_check(model, target_cube_id , gripper_max_open)
-            next_state = "start"
+                end_box_geom = model.body_geomadr[target_box_id]
+                exceeds_length = cube_length_check(model, end_box_geom, gripper_max_open)
+                next_state = "start"
+
+            else:
+                target_box_id = None
+                exceeds_length = None
+                next_state = "wait"
+
             state_start_time = data.time
 
     
-        else:    
-            next_state, goal_position = pick_and_place(
-        model, data, exceeds_length, t_rotation, gripper_id, space_id, 
-        cube_pos, ee_pos, state, state_start_time
-    )
-            
-        
+        else:
+            if target_box_id is not None:
+                valid_geom = model.body_geomadr[target_box_id]
+                target_box = data.geom_xpos[valid_geom].copy()
+                next_state, goal_position = pick_and_place(model, data,gripper_id, target_box, ee_pos, state, state_start_time, target_pack_pos)
+
+
         if next_state != state:
             state_start_time = data.time
-            if next_state == "close_gripper":
-                data.ctrl[arm_actuator_ids] = data.qpos[:7].copy()
+            if next_state == "start":
+                print("--------------------")
+                print("Started Moving Boxes")
+            elif next_state == "open_gripper":
+                print("Open Gripper")
+            elif next_state == "descend_to_cube":
+                print("Approach to the box")
+            elif next_state == "close_gripper":
+                print("Close Gripper")
+            elif next_state == "lift":
+                print("Lift the box")
+            elif next_state == "move":
+                print("Move to target position")
+            elif next_state == "drop":
+                print("Approach to drop")
+            elif next_state == "release_gripper":
+                print("Release gripper")
+            elif next_state == "move_to_default":
+                print("Move to default")
+            elif next_state == "move_to_start":
+                print("Move to start")
+            elif next_state == "end":
+                print("Task End")
 
         state = next_state
 
@@ -201,8 +240,6 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         else:
             t_position = smooth_move(t_position, goal_position, speed=0.1)
         
-
-    
         if exceeds_length == "long":
             t_rotation = long_rotated
         elif exceeds_length == "tall":
@@ -210,9 +247,10 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         else:
             t_rotation = d_rotation
 
-        for _ in range(5): 
+        for _ in range(10): 
             if state != "close_gripper":
                 inverse_kinematics(model, data, gripper_site_id, t_position, t_rotation, arm_actuator_ids, exceeds_length, alpha=0.3)
+                    
                 mujoco.mj_kinematics(model, data)
 
         mujoco.mj_step(model, data)
