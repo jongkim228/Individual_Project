@@ -9,86 +9,7 @@ from motions import pick_and_place, reached, smooth_move
 from detection import calculate_in_local, objects_in_fov, cube_length_check
 from inverse_kinematics import inverse_kinematics
 from packing import box_packing
-
-
-model = mujoco.MjModel.from_xml_path("mujoco_menagerie/franka_emika_panda/scene.xml")
-data = mujoco.MjData(model)
-
-arm_actuator_names = [
-    "actuator1", "actuator2", "actuator3",
-    "actuator4", "actuator5", "actuator6", "actuator7"
-]
-
-
-arm_actuator_ids = np.array([model.actuator(name).id for name in arm_actuator_names])
-gripper_id = model.actuator("actuator8").id
-
-
-
-# box xpos
-cube_body_id = model.body("cube1").id
-
-
-# space
-space_id = model.body("target_space").id
-start_pos_id = model.body("starting_space").id
-start_pos = data.xpos[start_pos_id].copy()
-target_space_pos = data.xpos[space_id].copy()
-
-# gripper site
-gripper_site_id = model.site("gripper").id
-
-
-
-#Camera Rendering
-h, w = 320, 480
-renderer = mujoco.Renderer(model, height=h, width=w)
-camera_name = "camera_head"
-
-#Middle coordinate for camera screen
-u = w // 2
-v = h // 2
-
-#Max length of 2 finger joint
-jid1 =  mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, "finger_joint1")
-jid2 = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, "finger_joint2")
-
-r1 = model.jnt_range[jid1]
-r2 = model.jnt_range[jid2]
-
-finger1_max = r1[1] - r1[0]
-finger2_max = r2[1] - r2[0]
-
-#Max Length of Gripper
-gripper_max_open  = finger1_max + finger2_max
-
-#default gripper matrix
-d_rotation = np.array([
-    [1,0,0],
-    [0,-1,0],
-    [0,0,-1]
-])
-
-#Z-axis 90 rotation matrix
-c, s = np.cos(np.pi/2), np.sin(np.pi/2)
-z_90_rotation = np.array([
-        [c,-s,0],
-        [s,c,0],
-        [0,0,1]
-])
-
-y_90_rotation = np.array([
-    [c,0,s],
-    [0,1,0],
-    [-s,0,c]
-])
-
-
-long_rotated = d_rotation @ z_90_rotation
-tall_rotated = d_rotation @ y_90_rotation
-
-num_box = 0
-
+from init import *
 
 with mujoco.viewer.launch_passive(model, data) as viewer:
 
@@ -125,8 +46,10 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
     exceeds_length = None
     target_pack_pos = None
     packing_result = []
+    areas = []
+    sorted_boxes = []
 
-
+    initialized = False
 
     while viewer.is_running():
 
@@ -148,16 +71,15 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         at_default_position = reached(ee_pos, default_position, tol=0.05)
 
         gripper_pos = data.site_xpos[gripper_site_id].copy()
-        box_pos = data.geom_xpos[cube_body_id].copy()
 
+        
 
         #if state is "wait" it is ready to pick up the cube if it is on valid space
         if state == "wait":
-
             #move gripper to default postion (centre of limited space)
             goal_position = default_position
 
-            if at_default_position:
+            if at_default_position and not initialized:
                 for scene_box in scene_boxes:
                     box_geom_id = model.body_geomadr[scene_box]
                     local_value = calculate_in_local(model, data, camera_name, box_geom_id)
@@ -170,38 +92,34 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
                 print(f"{num_box} boxes have detected")
 
-            areas = []
-            for i in valid_boxes:
-                size = model.geom_size[i]
-                for j in range(len(size)):
-                    size[j] *= 100
+                for i in valid_boxes:
+                    geom_id = model.body_geomadr[i]
+                    size = model.geom_size[geom_id].copy()
+                                            
+                    areas.append(max(size) * 100)
 
-                areas.append(max(size))
+                sorted_boxes = sorted(valid_boxes,key=lambda i: dict(zip(valid_boxes, areas))[i],reverse=True)
+                initialized = True
 
-            sorted_boxes = sorted(valid_boxes,key=lambda i: dict(zip(valid_boxes, areas))[i],reverse=True)
 
+                #Box on valid space
+                if len(sorted_boxes) > 0:
+                    packing_result = box_packing(data, model, sorted_boxes)
+                    target_pack_pos = packing_result.pop(0)
+                    target_box_id = sorted_boxes.pop(0)
 
-        #Box on valid space
-            if len(sorted_boxes) > 0:
-                packing_result = box_packing(data, model, sorted_boxes)
-                print("packing_result:", packing_result)
-                target_pack_pos = packing_result.pop(0)
-                print("target_pack_pos:", target_pack_pos)
-                target_box_id = sorted_boxes.pop(0)
+                    valid_box_geom = model.body_geomadr[target_box_id]
 
-                valid_box_geom = model.body_geomadr[target_box_id]
+                    #check the box length is over the gripper open range
+                    exceeds_length = cube_length_check(model,valid_box_geom,gripper_max_open)
 
-                #check the box length is over the gripper open range
-                exceeds_length = cube_length_check(model,valid_box_geom,gripper_max_open)
-
-                next_state = "start"
-                
+                    next_state = "start"
+                    
 
         elif state == "end":
             if len(sorted_boxes) > 0:
                 target_box_id = sorted_boxes.pop(0)
                 target_pack_pos = packing_result.pop(0)
-                print("target_pack_pos:", target_pack_pos)
 
                 end_box_geom = model.body_geomadr[target_box_id]
                 exceeds_length = cube_length_check(model, end_box_geom, gripper_max_open)
