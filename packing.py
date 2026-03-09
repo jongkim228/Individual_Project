@@ -3,6 +3,7 @@ import csv
 import subprocess
 
 SCALE = 1000
+MARGIN = 5
 
 
 def box_packing(data,model,boxes):
@@ -12,8 +13,8 @@ def box_packing(data,model,boxes):
     size = model.geom_size[geom_id]
 
     print("target_space raw size:", size)
-    print("length:", size[0] * 2)
-    print("width:", size[1] * 2)
+    print("length:", size[0])
+    print("width:", size[1] )
 
     length = size[0] * 2
     width = size[1] * 2
@@ -29,7 +30,7 @@ def box_packing(data,model,boxes):
 
     for body_id in boxes:
         geom_id = model.body_geomadr[body_id]
-        box_size = model.geom_size[geom_id]        
+        box_size = model.geom_size[geom_id] * 2     
         pos = data.geom_xpos[geom_id]
 
         csv_box.append(box_size)
@@ -44,7 +45,7 @@ def box_packing(data,model,boxes):
         writer.writeheader()                          
         for x, y, z in csv_box:
             writer.writerow({
-                "X": int(x * 2 * SCALE), "Y": int(y * 2 * SCALE),"Z": int(z * 2 * SCALE),
+                "X": int(x  * SCALE) + MARGIN, "Y": int(y * SCALE) + MARGIN ,"Z": int(z  * SCALE),
                 "ROTATIONS": 1, 
                 "COPIES": 1
             })
@@ -86,7 +87,7 @@ def box_packing(data,model,boxes):
                 results.append(
                     {
                         "id": int(row["ID"]),
-                        "x": int(row["X"]) / SCALE,
+                        "x": int(row["X"]) / SCALE + 0.01,
                         "y": int(row["Y"]) / SCALE,
                         "z": int(row["Z"]) / SCALE,
                     }

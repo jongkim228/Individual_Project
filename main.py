@@ -3,6 +3,7 @@ import mujoco
 import mujoco.viewer
 import cv2
 import csv
+import math
 
 from motions import pick_and_place, reached, smooth_move
 from detection import calculate_in_local, objects_in_fov, cube_length_check
@@ -166,13 +167,27 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                         valid_boxes.append(scene_box)
                         num_box += 1
 
+
                 print(f"{num_box} boxes have detected")
 
+            areas = []
+            for i in valid_boxes:
+                size = model.geom_size[i]
+                for j in range(len(size)):
+                    size[j] *= 100
+
+                areas.append(max(size))
+
+            sorted_boxes = sorted(valid_boxes,key=lambda i: dict(zip(valid_boxes, areas))[i],reverse=True)
+
+
         #Box on valid space
-            if len(valid_boxes) > 0:
-                packing_result = box_packing(data, model, valid_boxes)
+            if len(sorted_boxes) > 0:
+                packing_result = box_packing(data, model, sorted_boxes)
+                print("packing_result:", packing_result)
                 target_pack_pos = packing_result.pop(0)
-                target_box_id = valid_boxes.pop(0)
+                print("target_pack_pos:", target_pack_pos)
+                target_box_id = sorted_boxes.pop(0)
 
                 valid_box_geom = model.body_geomadr[target_box_id]
 
@@ -183,10 +198,10 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                 
 
         elif state == "end":
-            if len(valid_boxes) > 0:
-                packing_result = box_packing(data, model, valid_boxes)
-                target_box_id = valid_boxes.pop(0)
+            if len(sorted_boxes) > 0:
+                target_box_id = sorted_boxes.pop(0)
                 target_pack_pos = packing_result.pop(0)
+                print("target_pack_pos:", target_pack_pos)
 
                 end_box_geom = model.body_geomadr[target_box_id]
                 exceeds_length = cube_length_check(model, end_box_geom, gripper_max_open)
@@ -238,7 +253,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         if state == "close_gripper":
             pass
         else:
-            t_position = smooth_move(t_position, goal_position, speed=0.1)
+            t_position = smooth_move(t_position, goal_position, speed=0.7)
         
         if exceeds_length == "long":
             t_rotation = long_rotated

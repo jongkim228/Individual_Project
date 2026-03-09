@@ -36,7 +36,7 @@ def pick_and_place(    model,
     above_box_pos = target_box_pos + above
 
     # coordinate for box pick up
-    close = np.array([0,-0.015, -0.035])
+    close = np.array([0.02,-0.015, -0.035])
     drop = np.array([0,0,0.03])
     pick_pos = target_box_pos + close
 
@@ -75,7 +75,7 @@ def pick_and_place(    model,
     elif state == "open_gripper":
         data.ctrl[gripper_id] = gripper_open
         # wait until it opens the gripper
-        if data.time - state_start_time > 0.8:
+        if data.time - state_start_time > 0.4:
             next_state = "descend_to_cube"
     
     elif state == "descend_to_cube":
