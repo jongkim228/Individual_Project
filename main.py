@@ -8,7 +8,7 @@ import math
 from motions import pick_and_place, reached, smooth_move
 from detection import calculate_in_local, objects_in_fov, cube_length_check
 from inverse_kinematics import inverse_kinematics
-from packing import box_packing
+from packing import box_solution
 from init import *
 
 with mujoco.viewer.launch_passive(model, data) as viewer:
@@ -105,7 +105,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
                 #Box on valid space
                 if len(sorted_boxes) > 0:
-                    packing_result = box_packing(data, model, sorted_boxes)
+                    packing_result = box_solution(data, model, sorted_boxes)
 
                     target_pack_pos = packing_result.pop(0)
                     target_box_id = sorted_boxes.pop(0)

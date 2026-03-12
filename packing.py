@@ -5,7 +5,7 @@ import subprocess
 SCALE = 1000
 
 
-def box_packing(data,model,boxes):
+def box_solution(data,model,boxes):
     target_space_id = model.body("target_space").id
     target_pos = data.xpos[target_space_id]
 
