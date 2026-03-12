@@ -52,6 +52,8 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
     initialized = False
     t_rotation = d_rotation
 
+    
+
     while viewer.is_running():
 
         #Timer

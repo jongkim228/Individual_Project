@@ -24,6 +24,28 @@ target_space_pos = data.xpos[space_id].copy()
 # gripper site
 gripper_site_id = model.site("gripper").id
 
+L_max = 0
+R_max = 0
+for i in range(model.ngeom):
+    bodyid = model.geom(i).bodyid
+    bodyname = model.body(bodyid).name
+    if "left_finger" in bodyname:
+        size = model.geom(i).size
+        pos = model.geom(i).pos
+        x_end = abs(pos[0]) + size[0]
+        L_max = max(L_max, x_end)
+
+    if "right_finger" in bodyname:
+        size = model.geom(i).size
+        pos = model.geom(i).pos
+        x_end = abs(pos[0]) + size[0]
+        R_max = max(R_max, x_end)
+
+
+LEFT_FINGER_THICKNESS = L_max * 2
+RIGHT_FINGER_THICKNESS = R_max * 2
+
+
 
 
 #Camera Rendering
