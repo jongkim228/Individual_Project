@@ -9,13 +9,15 @@ def reached(ee_pos, goal_pos, tol):
     return np.linalg.norm(ee_pos - goal_pos) < tol
 
     
-def pick_and_place(    model,
+def pick_and_place(    
+    model,
     data,
     gripper_id,
     box_pos,
     ee_pos,
     state,
     state_start_time,
+    rotation,
     pack_pos = None,
     tol=0.04):
 
@@ -36,9 +38,16 @@ def pick_and_place(    model,
     above_box_pos = target_box_pos + above
 
     # coordinate for box pick up
-    close = np.array([0.02,-0.015, -0.035])
+    if rotation == "long":
+        close = np.array([0, 0.025, -0.035])
+
+    else:
+        close = np.array([0.0,-0.02, -0.035])
+
+
     drop = np.array([0,0,0.03])
     pick_pos = target_box_pos + close
+
 
     # gripper id and control range
     gripper_id = model.actuator("actuator8").id
@@ -59,7 +68,8 @@ def pick_and_place(    model,
     current = ee_pos.copy()
 
     if pack_pos is not None:
-        drop_pos = target_space + np.array([pack_pos["x"], pack_pos["y"], pack_pos["z"]])
+        drop_pos = np.array([pack_pos["x"], pack_pos["y"], pack_pos["z"]])
+
     else:
         drop_pos = target_space + drop
 

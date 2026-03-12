@@ -3,36 +3,25 @@ import csv
 import subprocess
 
 SCALE = 1000
-MARGIN = 5
 
 
 def box_packing(data,model,boxes):
     target_space_id = model.body("target_space").id
+    target_pos = data.xpos[target_space_id]
+
     geom_id = model.body_geomadr[target_space_id]
 
     size = model.geom_size[geom_id]
 
-    print("target_space raw size:", size)
-    print("length:", size[0])
-    print("width:", size[1] )
-
     length = size[0] * 2
     width = size[1] * 2
     height = 0.7
-
-    area = length * width
-    dimension = area * height
-
-    box_in_space = 0
-    packing_ratio = (box_in_space / dimension) * 100
 
     csv_box = []
 
     for body_id in boxes:
         geom_id = model.body_geomadr[body_id]
         box_size = model.geom_size[geom_id] * 2     
-        pos = data.geom_xpos[geom_id]
-
         csv_box.append(box_size)
 
     
@@ -45,7 +34,7 @@ def box_packing(data,model,boxes):
         writer.writeheader()                          
         for x, y, z in csv_box:
             writer.writerow({
-                "X": int(x  * SCALE) + MARGIN, "Y": int(y * SCALE) + MARGIN ,"Z": int(z  * SCALE),
+                "X": int(x  * SCALE), "Y": int(y * SCALE) ,"Z": int(z  * SCALE),
                 "ROTATIONS": 1, 
                 "COPIES": 1
             })
@@ -64,7 +53,7 @@ def box_packing(data,model,boxes):
         writer = csv.DictWriter(f, fieldnames=["NAME", "VALUE"])
         writer.writeheader()  
         writer.writerow({
-            "NAME": "objective", "VALUE": "knapsack"
+            "NAME": "objective", "VALUE": "bin-packing"
         })
 
 
@@ -74,8 +63,15 @@ def box_packing(data,model,boxes):
     "--bins", "bins.csv",
     "--parameters", "parameters.csv",
     "--certificate", "solutions.csv",
-    "--time-limit", "10"
+    "--time-limit", "10",
 ])
+    
+    with open("solutions.csv", "r") as f:
+        print(f.read()) 
+    
+    origin_x = target_pos[0] - length / 2
+    origin_y = target_pos[1] - width / 2
+    origin_z = target_pos[2]
 
     
 
@@ -84,14 +80,26 @@ def box_packing(data,model,boxes):
         reader = csv.DictReader(f)
         for row in reader:
             if row["TYPE"] == "ITEM":
+                item_id = int(row["ID"])
+                box_size = csv_box[item_id]
                 results.append(
                     {
-                        "id": int(row["ID"]),
-                        "x": int(row["X"]) / SCALE + 0.01,
-                        "y": int(row["Y"]) / SCALE,
-                        "z": int(row["Z"]) / SCALE,
+                        "id": item_id,
+                        "x": origin_x + int(row["X"]) / SCALE + box_size[0] / 2,
+                        "y": origin_y + int(row["Y"]) / SCALE + box_size[1] / 2,
+                        "z": origin_z + int(row["Z"]) / SCALE + box_size[2] / 2,
                     }
                 )
+
+    for r in results:
+        print(f"x={r['x']:.4f} y={r['y']:.4f} z={r['z']:.4f}")
+
+    print(f"target_pos y: {target_pos[1]}")
+    print(f"width: {width}")
+    print(f"origin_y: {origin_y}")
+    print(f"solver Y: {int(row['Y']) / SCALE}")
+    print(f"box_size y: {box_size[1]}")
+    print(f"최종 y: {origin_y + int(row['Y']) / SCALE + box_size[1]/2}")
 
     return results
 

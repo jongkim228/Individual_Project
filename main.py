@@ -50,6 +50,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
     sorted_boxes = []
 
     initialized = False
+    t_rotation = d_rotation
 
     while viewer.is_running():
 
@@ -105,6 +106,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                 #Box on valid space
                 if len(sorted_boxes) > 0:
                     packing_result = box_packing(data, model, sorted_boxes)
+
                     target_pack_pos = packing_result.pop(0)
                     target_box_id = sorted_boxes.pop(0)
 
@@ -112,6 +114,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
                     #check the box length is over the gripper open range
                     exceeds_length = cube_length_check(model,valid_box_geom,gripper_max_open)
+
 
                     next_state = "start"
                     
@@ -123,6 +126,8 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
                 end_box_geom = model.body_geomadr[target_box_id]
                 exceeds_length = cube_length_check(model, end_box_geom, gripper_max_open)
+
+
                 next_state = "start"
 
             else:
@@ -137,8 +142,16 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             if target_box_id is not None:
                 valid_geom = model.body_geomadr[target_box_id]
                 target_box = data.geom_xpos[valid_geom].copy()
-                next_state, goal_position = pick_and_place(model, data,gripper_id, target_box, ee_pos, state, state_start_time, target_pack_pos)
 
+                if exceeds_length == "long":
+                    t_rotation = long_rotated
+                elif exceeds_length == "tall":
+                    t_rotation = tall_rotated
+                else:
+                    t_rotation = d_rotation
+
+
+                next_state, goal_position = pick_and_place(model, data, gripper_id, target_box, ee_pos, state, state_start_time, pack_pos=target_pack_pos, rotation=exceeds_length)
 
         if next_state != state:
             state_start_time = data.time
@@ -173,12 +186,6 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         else:
             t_position = smooth_move(t_position, goal_position, speed=0.7)
         
-        if exceeds_length == "long":
-            t_rotation = long_rotated
-        elif exceeds_length == "tall":
-            t_rotation = tall_rotated
-        else:
-            t_rotation = d_rotation
 
         for _ in range(10): 
             if state != "close_gripper":
