@@ -10,9 +10,7 @@ def box_solution(data,model,boxes):
     target_pos = data.xpos[target_space_id]
 
     geom_id = model.body_geomadr[target_space_id]
-
     size = model.geom_size[geom_id]
-
     length = size[0] * 2
     width = size[1] * 2
     height = 0.7

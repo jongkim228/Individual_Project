@@ -96,3 +96,16 @@ long_rotated = d_rotation @ z_90_rotation
 tall_rotated = d_rotation @ y_90_rotation
 
 num_box = 0
+placed_boxes_territory = []
+
+valid_boxes = []     
+target_box_id = None  
+exceeds_length = None
+target_pack_pos = None
+packing_result = []
+areas = []
+sorted_boxes = []
+placed_boxes = []
+
+initialized = False
+t_rotation = d_rotation

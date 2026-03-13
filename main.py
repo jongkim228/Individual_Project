@@ -42,19 +42,6 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
     
 
 # filter cubes that are in valid space
-    valid_boxes = []     
-    target_box_id = None  
-    exceeds_length = None
-    target_pack_pos = None
-    packing_result = []
-    areas = []
-    sorted_boxes = []
-    placed_boxes = []
-
-    initialized = False
-    t_rotation = d_rotation
-
-    
 
     while viewer.is_running():
 
@@ -110,13 +97,19 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                 #Box on valid space
                 if len(sorted_boxes) > 0:
                     packing_result = box_solution(data, model, sorted_boxes)
+                    target_box_solution = packing_result.pop(0)
 
                     target_box_id = sorted_boxes.pop(0)
                     placed_boxes.append(target_box_id)
 
-                    collision_result = collision_check(target_box_id,exceeds_length,placed_boxes,packing_result)
+                    collision_result = collision_check(target_box_id,exceeds_length,placed_boxes,target_box_solution)
 
-                    print(collision_result)
+                    if collision_result == "collison":
+                        if exceeds_length == "long":
+                            exceeds_length = "default"
+                        else:
+                            exceeds_length = "long"
+                    
 
                     valid_box_geom = model.body_geomadr[target_box_id]
 

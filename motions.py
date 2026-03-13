@@ -39,13 +39,13 @@ def pick_and_place(
 
     # coordinate for box pick up
     if rotation == "long":
-        close = np.array([0, 0.025, -0.035])
+        close = np.array([0, 0.02, -0.035])
 
     else:
         close = np.array([0.0,-0.02, -0.035])
 
 
-    drop = np.array([0,0,0.03])
+    drop = np.array([0,0,-0.01])
     pick_pos = target_box_pos + close
 
 
@@ -115,12 +115,12 @@ def pick_and_place(
 
         goal_position = above_target
 
-        if reached(current,goal_position,tol = 0.07):
+        if reached(current,goal_position,tol = 0.0):
             next_state = "drop"
 
     elif state == "drop":
         goal_position = drop_pos
-        if reached(current,goal_position,tol= 0.07):
+        if reached(current,goal_position,tol= 0.05):
             next_state = "release_gripper"
 
     elif state == "release_gripper":
