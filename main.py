@@ -49,6 +49,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
     packing_result = []
     areas = []
     sorted_boxes = []
+    placed_boxes = []
 
     initialized = False
     t_rotation = d_rotation
@@ -109,10 +110,13 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                 #Box on valid space
                 if len(sorted_boxes) > 0:
                     packing_result = box_solution(data, model, sorted_boxes)
-                
 
-                    target_pack_pos = packing_result.pop(0)
                     target_box_id = sorted_boxes.pop(0)
+                    placed_boxes.append(target_box_id)
+
+                    collision_result = collision_check(target_box_id,exceeds_length,placed_boxes,packing_result)
+
+                    print(collision_result)
 
                     valid_box_geom = model.body_geomadr[target_box_id]
 
@@ -128,9 +132,12 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                 target_box_id = sorted_boxes.pop(0)
                 target_pack_pos = packing_result.pop(0)
 
+                
+
                 end_box_geom = model.body_geomadr[target_box_id]
                 exceeds_length = cube_length_check(model, end_box_geom, gripper_max_open)
 
+                placed_boxes.append(target_box_id)
 
                 next_state = "start"
 

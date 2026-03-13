@@ -60,6 +60,7 @@ def box_solution(data,model,boxes):
     subprocess.run([
     "./packingsolver/build/src/box/packingsolver_box",
     "--items", "items.csv",
+     "--verbosity-level", "0",
     "--bins", "bins.csv",
     "--parameters", "parameters.csv",
     "--certificate", "solutions.csv",
