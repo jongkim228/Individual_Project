@@ -42,10 +42,10 @@ def pick_and_place(
 
     # coordinate for box pick up
     if rotation == "long":
-        close = np.array([0, 0.02, -0.035])
+        close = np.array([0, 0, -0.035])
 
     else:
-        close = np.array([0.01,-0.02, -0.05])
+        close = np.array([0.0125,-0.02, -0.05])
 
 
     drop = np.array([0,0,0.01])

@@ -97,9 +97,14 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                 if len(sorted_boxes) > 0:
                     packing_result = box_solution(data, model, sorted_boxes,placed_boxes)
                     all_solutions = packing_result.copy()
-                    target_box_solution = packing_result.pop(0)
+                    
                     target_box_id = sorted_boxes.pop(0)
-
+                    if len(packing_result) > 0:
+                        target_box_solution = packing_result.pop(0)
+                    else:
+                        print("NO SOLUTINON FOR BOXES")
+                        break
+    
                     valid_box_geom = model.body_geomadr[target_box_id]
                     #check the box length is over the gripper open range
                     exceeds_length = cube_length_check(model,valid_box_geom,gripper_max_open)
@@ -107,9 +112,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                     collision_result = collision_check(target_box_id,exceeds_length,placed_boxes,target_box_solution,placed_solutions)
 
                     print(f"placed_boxes: {placed_boxes}")
-                    print(f"placed_solutions: {placed_solutions}")
-                    print(f"target_box_solution: {target_box_solution}")
-                    print(f"exceeds_length: {exceeds_length}")
+                    print(f"Collision: {exceeds_length}")
 
                     collision_result = collision_check(target_box_id, exceeds_length, placed_boxes, target_box_solution,all_solutions)
 
@@ -133,7 +136,12 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             if len(sorted_boxes) > 0:
                 #Get reamining box details
                 target_box_id = sorted_boxes.pop(0)
-                target_box_solution = packing_result.pop(0)
+                if len(packing_result) > 0:
+                    target_box_solution = packing_result.pop(0)
+                else:
+                    print("NO SOLUTINON FOR BOXES")
+                    break
+
                 end_box_geom = model.body_geomadr[target_box_id]
 
                 #Check the collison and decide how to grab a box

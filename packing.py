@@ -30,9 +30,9 @@ def box_solution(data,model,boxes,placed_boxes):
     area_usage = placed_area / floor_area
 
     if area_usage >= 0.08:
-        height = 0.08
+        height = 0.16
     else:
-        height = 0.06
+        height = 0.08
 
     csv_box = []
 
@@ -51,7 +51,7 @@ def box_solution(data,model,boxes,placed_boxes):
         writer.writeheader()                          
         for x, y, z in csv_box:
             writer.writerow({
-                "X": int((x+MARGIN * 2)  * SCALE), "Y": int((y+MARGIN * 2) * SCALE) ,"Z": int((z+MARGIN * 2)  * SCALE),
+                "X": int((x+MARGIN * 2)  * SCALE), "Y": int((y+MARGIN * 2) * SCALE) ,"Z": int((z*SCALE)),
                 "ROTATIONS": 1, 
                 "COPIES": 1
             })
