@@ -1,12 +1,12 @@
 from init import *
 
 def bounding_box(box_size, rotation):
-
+    print(rotation)
     x,y,z = box_size
 
     if rotation == "long":
         x_width = x + LEFT_FINGER_THICKNESS + RIGHT_FINGER_THICKNESS
-        bounding_box = np.array([x_width, y, z])
+        bounding_box = np.array([x_width,y, z])
         return bounding_box
     else:
         y_width = y + LEFT_FINGER_THICKNESS + RIGHT_FINGER_THICKNESS
@@ -16,10 +16,10 @@ def bounding_box(box_size, rotation):
 #placed boxes coordinates
 def territory_calculation(placed_boxes):
     placed_boxes_territory.clear()
-    for i in placed_boxes:
+    for i in zip(placed_boxes):
         geom_id = model.body_geomadr[i]
         box_size = model.geom_size[geom_id]
-        box_pos = data.xpos[i]
+        box_pos = data.geom_xpos[geom_id]
 
         max = box_pos + box_size
         min = box_pos - box_size
@@ -33,21 +33,26 @@ def territory_calculation(placed_boxes):
     return placed_boxes_territory
 
         
-def collision_check(target_box, rotation, placed_boxes,solution):
-    territory_calculation(placed_boxes)
+def collision_check(target_box, rotation, placed_boxes,box_solution,solutions):
+
+    #calculation for placed boxes
+    territory = territory_calculation(placed_boxes)
+
     #target box
     geom_id = model.body_geomadr[target_box]
     box_size = model.geom_size[geom_id]
-
+    #bound box with gripper
     bounded_box = bounding_box(box_size,rotation)
 
-    if len(placed_boxes_territory) > 0:
-
-        solution_center = np.array([solution["x"], solution["y"],solution["z"]])
+    #if box is placed on target place
+    if len(territory) > 0:
+        solution_center = np.array([box_solution["x"],box_solution["y"],box_solution["z"]])
+        
+        #calculation for target box with solution
         bound_max = solution_center + bounded_box
         bound_min = solution_center - bounded_box
 
-        for box in placed_boxes_territory:
+        for box in territory:
             x_min = box["min"][0]
             x_max = box["max"][0]
 
@@ -63,10 +68,9 @@ def collision_check(target_box, rotation, placed_boxes,solution):
             
             if x_overlap and y_overlap and z_overlap:
                 return "collison"
-        else:
-            return "safe"
-    else:
-        return "safe"     
+
+    
+    return "safe"     
 
 
 

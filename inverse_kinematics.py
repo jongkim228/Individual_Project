@@ -45,7 +45,7 @@ def inverse_kinematics(model, data, gripper_site_id,t_position, t_rotation, arm_
 
     N = np.eye(7) - j_pse_inverse @ J
 
-    k_null = 0.15
+    k_null = 0.1
     dq0 = np.zeros(7)
     dq0[:7] = q_nominal - q_cur
 

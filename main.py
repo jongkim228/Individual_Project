@@ -81,7 +81,6 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                         valid_boxes.append(scene_box)
                         num_box += 1
 
-
                 print(f"{num_box} boxes have detected")
 
                 for i in valid_boxes:
@@ -96,13 +95,25 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
                 #Box on valid space
                 if len(sorted_boxes) > 0:
-                    packing_result = box_solution(data, model, sorted_boxes)
+                    packing_result = box_solution(data, model, sorted_boxes,placed_boxes)
+                    all_solutions = packing_result.copy()
                     target_box_solution = packing_result.pop(0)
-
                     target_box_id = sorted_boxes.pop(0)
-                    placed_boxes.append(target_box_id)
 
-                    collision_result = collision_check(target_box_id,exceeds_length,placed_boxes,target_box_solution)
+                    valid_box_geom = model.body_geomadr[target_box_id]
+                    #check the box length is over the gripper open range
+                    exceeds_length = cube_length_check(model,valid_box_geom,gripper_max_open)
+                    placed_solutions = all_solutions[:len(placed_boxes)]
+                    collision_result = collision_check(target_box_id,exceeds_length,placed_boxes,target_box_solution,placed_solutions)
+
+                    print(f"placed_boxes: {placed_boxes}")
+                    print(f"placed_solutions: {placed_solutions}")
+                    print(f"target_box_solution: {target_box_solution}")
+                    print(f"exceeds_length: {exceeds_length}")
+
+                    collision_result = collision_check(target_box_id, exceeds_length, placed_boxes, target_box_solution,all_solutions)
+
+                    print(f"collision_result: {collision_result}")
 
                     if collision_result == "collison":
                         if exceeds_length == "long":
@@ -110,27 +121,40 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                         else:
                             exceeds_length = "long"
                     
-
-                    valid_box_geom = model.body_geomadr[target_box_id]
-
-                    #check the box length is over the gripper open range
-                    exceeds_length = cube_length_check(model,valid_box_geom,gripper_max_open)
-
-
                     next_state = "start"
                     
 
         elif state == "end":
+            #After putting box on the target space
+            #put the box id in to placed_boxes list
+            placed_boxes.append(target_box_id)
+
+            # if there are more boxes
             if len(sorted_boxes) > 0:
+                #Get reamining box details
                 target_box_id = sorted_boxes.pop(0)
-                target_pack_pos = packing_result.pop(0)
-
-                
-
+                target_box_solution = packing_result.pop(0)
                 end_box_geom = model.body_geomadr[target_box_id]
+
+                #Check the collison and decide how to grab a box
                 exceeds_length = cube_length_check(model, end_box_geom, gripper_max_open)
 
-                placed_boxes.append(target_box_id)
+                placed_solutions = all_solutions[:len(placed_boxes)]
+                placed_solutions = all_solutions[:len(placed_boxes)]
+                print(f"placed_boxes: {placed_boxes}")
+                print(f"placed_solutions: {placed_solutions}")
+                print(f"target_box_solution: {target_box_solution}")
+                print(f"exceeds_length: {exceeds_length}")
+
+                collision_result = collision_check(target_box_id, exceeds_length, placed_boxes, target_box_solution,all_solutions)
+
+                print(f"collision_result: {collision_result}")
+
+                if collision_result == "collison":
+                    if exceeds_length == "long":
+                        exceeds_length = "default"
+                    else:
+                        exceeds_length = "long"
 
                 next_state = "start"
 
@@ -153,9 +177,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                     t_rotation = tall_rotated
                 else:
                     t_rotation = d_rotation
-
-
-                next_state, goal_position = pick_and_place(model, data, gripper_id, target_box, ee_pos, state, state_start_time, pack_pos=target_pack_pos, rotation=exceeds_length)
+                next_state, goal_position = pick_and_place(model, data, gripper_id, target_box,  ee_pos, state, state_start_time, pack_pos=target_box_solution, rotation=exceeds_length)
 
         if next_state != state:
             state_start_time = data.time
@@ -188,12 +210,12 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         if state == "close_gripper":
             pass
         else:
-            t_position = smooth_move(t_position, goal_position, speed=0.7)
+            t_position = smooth_move(t_position, goal_position, speed=0.3)
         
 
-        for _ in range(10): 
+        for _ in range(5): 
             if state != "close_gripper":
-                inverse_kinematics(model, data, gripper_site_id, t_position, t_rotation, arm_actuator_ids, exceeds_length, alpha=0.3)
+                inverse_kinematics(model, data, gripper_site_id, t_position, t_rotation, arm_actuator_ids, exceeds_length, alpha=0.5)
                     
                 mujoco.mj_kinematics(model, data)
 

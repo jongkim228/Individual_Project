@@ -1,8 +1,11 @@
 import numpy as np
 import mujoco
 
-def smooth_move(current, target, speed=0.1):
-    return current + speed * (target - current)
+def smooth_move(current, target, speed=0.3, snap_tol=0.02):
+    diff = target - current
+    if np.linalg.norm(diff) < snap_tol:
+        return target.copy() 
+    return current + speed * diff
 
 
 def reached(ee_pos, goal_pos, tol):
@@ -42,10 +45,10 @@ def pick_and_place(
         close = np.array([0, 0.02, -0.035])
 
     else:
-        close = np.array([0.0,-0.02, -0.035])
+        close = np.array([0.01,-0.02, -0.05])
 
 
-    drop = np.array([0,0,-0.01])
+    drop = np.array([0,0,0.01])
     pick_pos = target_box_pos + close
 
 
@@ -68,7 +71,7 @@ def pick_and_place(
     current = ee_pos.copy()
 
     if pack_pos is not None:
-        drop_pos = np.array([pack_pos["x"], pack_pos["y"], pack_pos["z"]])
+        drop_pos = np.array([pack_pos["x"], pack_pos["y"], pack_pos["z"] - 0.02])
 
     else:
         drop_pos = target_space + drop
@@ -92,8 +95,8 @@ def pick_and_place(
         current = ee_pos.copy()
         goal_position = pick_pos
         
-        if reached(current, goal_position, tol=0.04):
-            if data.time - state_start_time > 0.5:
+        if reached(current, goal_position, tol=0.05):
+            if data.time - state_start_time > 0.3:
                 next_state = "close_gripper"
 
 
@@ -115,23 +118,25 @@ def pick_and_place(
 
         goal_position = above_target
 
-        if reached(current,goal_position,tol = 0.0):
+        if reached(current,goal_position,tol = 0.05):
             next_state = "drop"
 
     elif state == "drop":
         goal_position = drop_pos
-        if reached(current,goal_position,tol= 0.05):
+        if data.time - state_start_time > 1.2:
             next_state = "release_gripper"
 
     elif state == "release_gripper":
         data.ctrl[gripper_id] = gripper_open
-        next_state = "move_to_default"
+        if data.time - state_start_time > 0.3:
+            next_state = "move_to_default"
 
     elif state == "move_to_default":
-        goal_position = above_target
+        if data.time - state_start_time > 0.3:
+            goal_position = above_target
 
-        if reached(current,goal_position,tol):
-            next_state = "move_to_start"
+            if reached(current,goal_position,tol):
+                next_state = "move_to_start"
 
     elif state == "move_to_start":
         goal_position = lift_pos

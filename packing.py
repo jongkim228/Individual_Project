@@ -3,9 +3,10 @@ import csv
 import subprocess
 
 SCALE = 1000
+MARGIN = 0.005
 
 
-def box_solution(data,model,boxes):
+def box_solution(data,model,boxes,placed_boxes):
     target_space_id = model.body("target_space").id
     target_pos = data.xpos[target_space_id]
 
@@ -13,7 +14,25 @@ def box_solution(data,model,boxes):
     size = model.geom_size[geom_id]
     length = size[0] * 2
     width = size[1] * 2
-    height = 0.7
+
+    print("LENGTH",length)
+    print("TARGET_POS", target_pos)
+    
+
+    floor_area = length * width
+    placed_area = 0
+    for i in placed_boxes:
+        box_geom_id = model.body_geomadr[i]
+        located_box_size = model.geom_size[box_geom_id]
+        usage = located_box_size[0] * located_box_size[1] * 4
+        placed_area += usage
+
+    area_usage = placed_area / floor_area
+
+    if area_usage >= 0.08:
+        height = 0.08
+    else:
+        height = 0.06
 
     csv_box = []
 
@@ -32,7 +51,7 @@ def box_solution(data,model,boxes):
         writer.writeheader()                          
         for x, y, z in csv_box:
             writer.writerow({
-                "X": int(x  * SCALE), "Y": int(y * SCALE) ,"Z": int(z  * SCALE),
+                "X": int((x+MARGIN * 2)  * SCALE), "Y": int((y+MARGIN * 2) * SCALE) ,"Z": int((z+MARGIN * 2)  * SCALE),
                 "ROTATIONS": 1, 
                 "COPIES": 1
             })
@@ -91,14 +110,7 @@ def box_solution(data,model,boxes):
                 )
 
     for r in results:
-        print(f"x={r['x']:.4f} y={r['y']:.4f} z={r['z']:.4f}")
-
-    print(f"target_pos y: {target_pos[1]}")
-    print(f"width: {width}")
-    print(f"origin_y: {origin_y}")
-    print(f"solver Y: {int(row['Y']) / SCALE}")
-    print(f"box_size y: {box_size[1]}")
-    print(f"최종 y: {origin_y + int(row['Y']) / SCALE + box_size[1]/2}")
+        print(f"SOLUTION x={r['x']:.4f} y={r['y']:.4f} z={r['z']:.4f}")
 
     return results
 
