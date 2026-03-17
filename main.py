@@ -185,7 +185,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                     t_rotation = tall_rotated
                 else:
                     t_rotation = d_rotation
-                next_state, goal_position = pick_and_place(model, data, gripper_id, target_box,  ee_pos, state, state_start_time, pack_pos=target_box_solution, rotation=exceeds_length)
+                next_state, goal_position = pick_and_place(model, data, gripper_id, target_box, valid_geom,  ee_pos, state, state_start_time, pack_pos=target_box_solution, rotation=exceeds_length)
 
         if next_state != state:
             state_start_time = data.time

@@ -17,6 +17,7 @@ def pick_and_place(
     data,
     gripper_id,
     box_pos,
+    box_geom_id,
     ee_pos,
     state,
     state_start_time,
@@ -28,6 +29,8 @@ def pick_and_place(
     # Get Space ID 
     start_pos_id = model.body("starting_space").id
     target_pos_id = model.body("target_space").id
+
+    box_z = model.geom_size[box_geom_id][2]
 
     # Get space position coordinates
     start_space = data.xpos[start_pos_id]
@@ -42,10 +45,10 @@ def pick_and_place(
 
     # coordinate for box pick up
     if rotation == "long":
-        close = np.array([0, 0, -0.035])
+        close = np.array([0, 0, -box_z])
 
     else:
-        close = np.array([0.0125,-0.02, -0.05])
+        close = np.array([0.0125, 0, -box_z])
 
 
     drop = np.array([0,0,0.01])
