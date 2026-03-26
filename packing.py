@@ -3,7 +3,7 @@ import csv
 import subprocess
 
 SCALE = 1000
-MARGIN = 0.005
+MARGIN = 0.01
 
 
 def box_solution(data,model,boxes,placed_boxes):

@@ -1,11 +1,8 @@
 import numpy as np
 import mujoco
 
-def smooth_move(current, target, speed=0.3, snap_tol=0.02):
-    diff = target - current
-    if np.linalg.norm(diff) < snap_tol:
-        return target.copy() 
-    return current + speed * diff
+def smooth_move(current, target, speed=0.1):
+    return current + speed * (target - current)
 
 
 def reached(ee_pos, goal_pos, tol):
@@ -17,7 +14,6 @@ def pick_and_place(
     data,
     gripper_id,
     box_pos,
-    box_geom_id,
     ee_pos,
     state,
     state_start_time,
@@ -29,8 +25,6 @@ def pick_and_place(
     # Get Space ID 
     start_pos_id = model.body("starting_space").id
     target_pos_id = model.body("target_space").id
-
-    box_z = model.geom_size[box_geom_id][2]
 
     # Get space position coordinates
     start_space = data.xpos[start_pos_id]
@@ -45,10 +39,10 @@ def pick_and_place(
 
     # coordinate for box pick up
     if rotation == "long":
-        close = np.array([0, 0, -box_z])
+        close = np.array([0, 0, -0.035])
 
     else:
-        close = np.array([0.0125, 0, -box_z])
+        close = np.array([0.01,-0.02, -0.05])
 
 
     drop = np.array([0,0,0.01])
@@ -126,13 +120,12 @@ def pick_and_place(
 
     elif state == "drop":
         goal_position = drop_pos
-        if data.time - state_start_time > 1.2:
+        if data.time - state_start_time > 0.8:
             next_state = "release_gripper"
 
     elif state == "release_gripper":
         data.ctrl[gripper_id] = gripper_open
-        if data.time - state_start_time > 0.3:
-            next_state = "move_to_default"
+        next_state = "move_to_default"
 
     elif state == "move_to_default":
         if data.time - state_start_time > 0.3:
