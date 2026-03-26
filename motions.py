@@ -14,12 +14,19 @@ def pick_and_place(
     data,
     gripper_id,
     box_pos,
+    box_id,
     ee_pos,
     state,
     state_start_time,
     rotation,
     pack_pos = None,
     tol=0.04):
+    
+
+    box_name = model.body(box_id).name
+    geom_id = model.geom(box_name).id
+    box_size = model.geom_size[geom_id]
+    z_value = box_size[2]
 
 
     # Get Space ID 
@@ -39,10 +46,10 @@ def pick_and_place(
 
     # coordinate for box pick up
     if rotation == "long":
-        close = np.array([0, 0, -0.035])
+        close = np.array([0, 0, -z_value])
 
     else:
-        close = np.array([0.01,-0.02, -0.05])
+        close = np.array([0.01,-0.02, -z_value])
 
 
     drop = np.array([0,0,0.01])
@@ -99,10 +106,9 @@ def pick_and_place(
 
     elif state == "close_gripper":
         goal_position = current
-        current_ctrl = data.ctrl[gripper_id]
-        data.ctrl[gripper_id] = current_ctrl + 0.05 * (gripper_close - current_ctrl)
+        data.ctrl[gripper_id] = 0
         
-        if data.time - state_start_time > 0.8:
+        if data.time - state_start_time > 1.2:
             next_state = "lift"
 
     elif state == "lift":

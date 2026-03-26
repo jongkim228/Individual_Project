@@ -177,7 +177,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                     t_rotation = tall_rotated
                 else:
                     t_rotation = d_rotation
-                next_state, goal_position = pick_and_place(model, data, gripper_id, target_box,  ee_pos, state, state_start_time, pack_pos=target_box_solution, rotation=exceeds_length)
+                next_state, goal_position = pick_and_place(model, data, gripper_id, target_box,target_box_id,  ee_pos, state, state_start_time, pack_pos=target_box_solution, rotation=exceeds_length)
 
         if next_state != state:
             state_start_time = data.time
@@ -215,7 +215,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
         for _ in range(5): 
             if state != "close_gripper":
-                inverse_kinematics(model, data, gripper_site_id, t_position, t_rotation, arm_actuator_ids, exceeds_length, alpha=0.5)
+                inverse_kinematics(model, data, gripper_site_id, t_position, t_rotation, arm_actuator_ids, exceeds_length, alpha=0.7)
                     
                 mujoco.mj_kinematics(model, data)
 
@@ -224,9 +224,9 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
         viewer.sync()
 
-        #renderer.update_scene(data,camera=camera_name)
+        renderer.update_scene(data,camera=camera_name)
         
-        #img = renderer.render()
+        img = renderer.render()
 
         renderer.enable_depth_rendering()
         depth = renderer.render()
@@ -235,7 +235,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         distance = depth[v, u] 
         
 
-        #cv2.imshow("Sub Camera", img[:, :, ::-1])
+        cv2.imshow("Sub Camera", img[:, :, ::-1])
 
         if cv2.waitKey(1) == 27:
             break
