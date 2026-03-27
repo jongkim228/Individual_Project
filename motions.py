@@ -1,6 +1,8 @@
 import numpy as np
 import mujoco
 
+log_file = open("error_log.txt", "w")
+
 def smooth_move(current, target, speed=0.1):
     diff = target - current
     if np.linalg.norm(diff) < 0.02:
@@ -49,7 +51,7 @@ def pick_and_place(
 
     # coordinate for box pick up
     if rotation == "long":
-        close = np.array([0, 0, -z_value])
+        close = np.array([0.02, 0, -z_value])
 
     else:
         close = np.array([0,-0.02, -z_value])
@@ -101,6 +103,9 @@ def pick_and_place(
     elif state == "descend_to_cube":
         current = ee_pos.copy()
         goal_position = pick_pos
+        diff = goal_position - current
+        log_file.write(f"x오차: {diff[0]:.5f}  y오차: {diff[1]:.5f}  z오차: {diff[2]:.5f}  거리: {np.linalg.norm(diff):.5f}\n")
+        log_file.flush()
         
         if reached(current, goal_position, tol=0.05):
             if data.time - state_start_time > 0.3:

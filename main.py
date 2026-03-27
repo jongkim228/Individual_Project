@@ -12,6 +12,21 @@ from packing import box_solution
 from init import *
 from collison import territory_calculation, collision_check
 
+CONTROL_PARAMS = {
+    "wait":             {"alpha": 0.3,  "k_null": 0.05, "damping": 0.03},
+    "start":            {"alpha": 0.3,  "k_null": 0.05, "damping": 0.03},
+    "open_gripper":     {"alpha": 0.2,  "k_null": 0.05, "damping": 0.03},
+    "descend_to_cube":  {"alpha": 0.15, "k_null": 0.1,  "damping": 0.08},
+    "close_gripper":    {"alpha": 0.1,  "k_null": 0.1,  "damping": 0.08},
+    "lift":             {"alpha": 0.2,  "k_null": 0.05, "damping": 0.03},
+    "move":             {"alpha": 0.3,  "k_null": 0.03, "damping": 0.03},
+    "drop":             {"alpha": 0.15, "k_null": 0.1,  "damping": 0.08},
+    "release_gripper":  {"alpha": 0.2,  "k_null": 0.05, "damping": 0.05},
+    "move_to_default":  {"alpha": 0.3,  "k_null": 0.1,  "damping": 0.03},
+    "move_to_start":    {"alpha": 0.3,  "k_null": 0.1,  "damping": 0.03},
+    "end":              {"alpha": 0.3,  "k_null": 0.05, "damping": 0.03},
+}
+
 with mujoco.viewer.launch_passive(model, data) as viewer:
 
     renderer.enable_depth_rendering()
