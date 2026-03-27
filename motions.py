@@ -2,7 +2,10 @@ import numpy as np
 import mujoco
 
 def smooth_move(current, target, speed=0.1):
-    return current + speed * (target - current)
+    diff = target - current
+    if np.linalg.norm(diff) < 0.02:
+        return target.copy() 
+    return current + speed * (diff)
 
 
 def reached(ee_pos, goal_pos, tol):
@@ -108,7 +111,7 @@ def pick_and_place(
         goal_position = current
         data.ctrl[gripper_id] = 0
         
-        if data.time - state_start_time > 1.2:
+        if data.time - state_start_time > 0.3:
             next_state = "lift"
 
     elif state == "lift":
@@ -126,7 +129,7 @@ def pick_and_place(
 
     elif state == "drop":
         goal_position = drop_pos
-        if reached(current, drop_pos, tol=0.08):
+        if reached(current, drop_pos, tol=0.05):
             next_state = "release_gripper"
 
     elif state == "release_gripper":

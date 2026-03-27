@@ -100,12 +100,21 @@ def box_solution(data,model,boxes,placed_boxes):
             if row["TYPE"] == "ITEM":
                 item_id = int(row["ID"])
                 box_size = csv_box[item_id]
+
+                lx = int(row["LX"]) / SCALE - MARGIN * 2
+                ly = int(row["LY"]) / SCALE - MARGIN * 2
+
+                rotation = 1 if abs(lx - box_size[1]) < 0.001 else 0
+
+                rotation = int(row.get("ROTATION",0))
+
                 results.append(
                     {
-                        "id": item_id,
-                        "x": origin_x + int(row["X"]) / SCALE + box_size[0] / 2,
-                        "y": origin_y + int(row["Y"]) / SCALE + box_size[1] / 2,
-                        "z": origin_z + int(row["Z"]) / SCALE + box_size[2] / 2,
+                    "id":       item_id,
+                    "x":        origin_x + int(row["X"]) / SCALE + MARGIN + lx / 2,
+                    "y":        origin_y + int(row["Y"]) / SCALE + MARGIN + ly / 2,
+                    "z":        origin_z + int(row["Z"]) / SCALE + box_size[2] / 2,
+                    "rotation": rotation
                     }
                 )
 

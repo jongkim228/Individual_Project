@@ -2,7 +2,7 @@ import numpy as np
 import mujoco
 
 
-def inverse_kinematics(model, data, gripper_site_id,t_position, t_rotation, arm_actuator_ids, exceeds_length, alpha = 0.3):
+def inverse_kinematics(model, data, gripper_site_id,t_position, t_rotation, arm_actuator_ids, exceeds_length, alpha = 0.3,k_null = 0.15):
 
     mujoco.mj_kinematics(model,data)
 
@@ -34,7 +34,7 @@ def inverse_kinematics(model, data, gripper_site_id,t_position, t_rotation, arm_
     J_full = np.vstack([jac_pos, jac_rot])
     J = J_full[:,:7]
 
-    damping = 0.1
+    damping = 0.05
     #pseudo inverse
     j_pse_inverse = weights_inverse @ J.T @ np.linalg.solve(J @ weights_inverse @ J.T + damping * np.eye(6), np.eye(6))
 
@@ -45,7 +45,6 @@ def inverse_kinematics(model, data, gripper_site_id,t_position, t_rotation, arm_
 
     N = np.eye(7) - j_pse_inverse @ J
 
-    k_null = 0.15
     dq0 = np.zeros(7)
     dq0[:7] = q_nominal - q_cur
 

@@ -104,6 +104,8 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                     valid_box_geom = model.body_geomadr[target_box_id]
                     #check the box length is over the gripper open range
                     exceeds_length = cube_length_check(model,valid_box_geom,gripper_max_open)
+                    if target_box_solution.get("rotation") == 1:
+                        exceeds_length = "long"
                     placed_solutions = all_solutions[:len(placed_boxes)]
                     collision_result = collision_check(target_box_id,exceeds_length,placed_boxes,target_box_solution,placed_solutions)
 
@@ -214,9 +216,9 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             t_position = smooth_move(t_position, goal_position, speed=0.3)
         
 
-        for _ in range(10): 
+        for _ in range(5): 
             if state != "close_gripper":
-                inverse_kinematics(model, data, gripper_site_id, t_position, t_rotation, arm_actuator_ids, exceeds_length, alpha=0.1)
+                inverse_kinematics(model, data, gripper_site_id, t_position, t_rotation, arm_actuator_ids, exceeds_length, alpha=0.3)
                     
                 mujoco.mj_forward(model, data)
 
