@@ -42,6 +42,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
     
 
 # filter cubes that are in valid space
+    t_rotation = d_rotation.copy()
 
     while viewer.is_running():
 
@@ -213,20 +214,20 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             t_position = smooth_move(t_position, goal_position, speed=0.3)
         
 
-        for _ in range(5): 
+        for _ in range(10): 
             if state != "close_gripper":
-                inverse_kinematics(model, data, gripper_site_id, t_position, t_rotation, arm_actuator_ids, exceeds_length, alpha=0.7)
+                inverse_kinematics(model, data, gripper_site_id, t_position, t_rotation, arm_actuator_ids, exceeds_length, alpha=0.1)
                     
-                mujoco.mj_kinematics(model, data)
+                mujoco.mj_forward(model, data)
 
         mujoco.mj_step(model, data)
 
 
         viewer.sync()
 
-        renderer.update_scene(data,camera=camera_name)
+        #renderer.update_scene(data,camera=camera_name)
         
-        img = renderer.render()
+        #img = renderer.render()
 
         renderer.enable_depth_rendering()
         depth = renderer.render()
@@ -235,7 +236,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         distance = depth[v, u] 
         
 
-        cv2.imshow("Sub Camera", img[:, :, ::-1])
+        #cv2.imshow("Sub Camera", img[:, :, ::-1])
 
         if cv2.waitKey(1) == 27:
             break

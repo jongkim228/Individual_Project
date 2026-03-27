@@ -34,7 +34,7 @@ def inverse_kinematics(model, data, gripper_site_id,t_position, t_rotation, arm_
     J_full = np.vstack([jac_pos, jac_rot])
     J = J_full[:,:7]
 
-    damping = 0.05
+    damping = 0.1
     #pseudo inverse
     j_pse_inverse = weights_inverse @ J.T @ np.linalg.solve(J @ weights_inverse @ J.T + damping * np.eye(6), np.eye(6))
 

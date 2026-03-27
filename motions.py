@@ -49,7 +49,7 @@ def pick_and_place(
         close = np.array([0, 0, -z_value])
 
     else:
-        close = np.array([0.01,-0.02, -z_value])
+        close = np.array([0,-0.02, -z_value])
 
 
     drop = np.array([0,0,0.01])
@@ -75,8 +75,8 @@ def pick_and_place(
     current = ee_pos.copy()
 
     if pack_pos is not None:
-        drop_pos = np.array([pack_pos["x"], pack_pos["y"], pack_pos["z"] - 0.02])
-
+        drop_pos = np.array([pack_pos["x"], pack_pos["y"], pack_pos["z"] - 0.01])
+        
     else:
         drop_pos = target_space + drop
 
@@ -126,7 +126,7 @@ def pick_and_place(
 
     elif state == "drop":
         goal_position = drop_pos
-        if data.time - state_start_time > 0.8:
+        if reached(current, drop_pos, tol=0.08):
             next_state = "release_gripper"
 
     elif state == "release_gripper":
