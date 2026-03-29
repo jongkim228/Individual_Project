@@ -46,15 +46,15 @@ def pick_and_place(
     target_box_pos = box_pos.copy()
 
     # coordinate for above target box
-    above = np.array([0, 0, 0.5])
+    above = np.array([0, 0, 0.2])
     above_box_pos = target_box_pos + above
 
     # coordinate for box pick up
     if rotation == "long":
-        close = np.array([0.02, 0, -z_value])
+        close = np.array([0, 0, -z_value-0.01])
 
     else:
-        close = np.array([0,-0.02, -z_value])
+        close = np.array([0,0, -z_value-0.01])
 
 
     drop = np.array([0,0,0.01])
@@ -80,7 +80,7 @@ def pick_and_place(
     current = ee_pos.copy()
 
     if pack_pos is not None:
-        drop_pos = np.array([pack_pos["x"], pack_pos["y"], pack_pos["z"] - 0.01])
+        drop_pos = np.array([pack_pos["x"], pack_pos["y"], pack_pos["z"] - 0.03])
         
     else:
         drop_pos = target_space + drop
@@ -102,7 +102,9 @@ def pick_and_place(
     
     elif state == "descend_to_cube":
         current = ee_pos.copy()
-        goal_position = pick_pos
+        goal_position =         np.array([target_box_pos[0],
+        target_box_pos[1], 
+        pick_pos[2] ])
         diff = goal_position - current
         log_file.write(f"x오차: {diff[0]:.5f}  y오차: {diff[1]:.5f}  z오차: {diff[2]:.5f}  거리: {np.linalg.norm(diff):.5f}\n")
         log_file.flush()
@@ -121,8 +123,8 @@ def pick_and_place(
 
     elif state == "lift":
         data.ctrl[gripper_id] = gripper_close
-        goal_position = lift_pos
-        if reached(current,goal_position,tol):
+        goal_position = np.array([pick_pos[0], pick_pos[1], 0.5])
+        if reached(current,goal_position,tol = 0.05):
             next_state = "move"
 
     elif state == "move":

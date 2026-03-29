@@ -3,10 +3,11 @@ import csv
 import subprocess
 
 SCALE = 1000
-MARGIN = 0.01
+MARGIN = 0.002
 
 
 def box_solution(data,model,boxes,placed_boxes):
+
     target_space_id = model.body("target_space").id
     target_pos = data.xpos[target_space_id]
 
@@ -15,8 +16,6 @@ def box_solution(data,model,boxes,placed_boxes):
     length = size[0] * 2
     width = size[1] * 2
 
-    print("LENGTH",length)
-    print("TARGET_POS", target_pos)
     
 
     floor_area = length * width
@@ -42,8 +41,6 @@ def box_solution(data,model,boxes,placed_boxes):
         csv_box.append(box_size)
 
     
-    for i in csv_box:
-        print(i)
 
 
     with open("items.csv", "w", newline="") as f:
@@ -117,9 +114,6 @@ def box_solution(data,model,boxes,placed_boxes):
                     "rotation": rotation
                     }
                 )
-
-    for r in results:
-        print(f"SOLUTION x={r['x']:.4f} y={r['y']:.4f} z={r['z']:.4f}")
 
     return results
 

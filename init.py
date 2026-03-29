@@ -14,18 +14,18 @@ arm_actuator_ids = np.array([model.actuator(name).id for name in arm_actuator_na
 gripper_id = model.actuator("actuator8").id
 
 params = {
-    "wait":             {"alpha": 0.3,  "k_null": 0.05, "damping": 0.03},
-    "start":            {"alpha": 0.3,  "k_null": 0.05, "damping": 0.03},
-    "open_gripper":     {"alpha": 0.2,  "k_null": 0.05, "damping": 0.03},
-    "descend_to_cube":  {"alpha": 0.15, "k_null": 0.1,  "damping": 0.1},
-    "close_gripper":    {"alpha": 0.1,  "k_null": 0.1,  "damping": 0.03},
-    "lift":             {"alpha": 0.2,  "k_null": 0.05, "damping": 0.03},
-    "move":             {"alpha": 0.3,  "k_null": 0.03, "damping": 0.1},
-    "drop":             {"alpha": 0.15, "k_null": 0.1,  "damping": 0.1},
-    "release_gripper":  {"alpha": 0.2,  "k_null": 0.05, "damping": 0.05},
-    "move_to_default":  {"alpha": 0.3,  "k_null": 0.1,  "damping": 0.03},
-    "move_to_start":    {"alpha": 0.3,  "k_null": 0.1,  "damping": 0.03},
-    "end":              {"alpha": 0.3,  "k_null": 0.05, "damping": 0.03},
+    "wait":             {"alpha": 0.7,  "k_null": 0.3, "damping": 0.05},
+    "start":            {"alpha": 0.9,  "k_null": 0, "damping": 0.05},
+    "open_gripper":     {"alpha": 0.5,  "k_null": 0, "damping": 0.05},
+    "descend_to_cube":  {"alpha": 0.5,  "k_null": 0, "damping": 0.05},
+    "close_gripper":    {"alpha": 0.5,  "k_null": 0, "damping": 0.05},
+    "lift":             {"alpha": 0.5,  "k_null": 0.15, "damping": 0.05},
+    "move":             {"alpha": 0.5,  "k_null": 0.15, "damping": 0.05},
+    "drop":             {"alpha": 0.5,  "k_null": 0.15, "damping": 0.05},
+    "release_gripper":  {"alpha": 0.5,  "k_null": 0.15, "damping": 0.05},
+    "move_to_default":  {"alpha": 0.7,  "k_null": 0.3, "damping": 0.05},
+    "move_to_start":    {"alpha": 0.7,  "k_null": 0.15, "damping": 0.05},
+    "end":              {"alpha": 0.5,  "k_null": 0.15, "damping": 0.05},
 }
 
 # space
