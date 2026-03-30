@@ -224,7 +224,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                 else:
                     target_q_nom = None
                 
-                inverse_kinematics(model, data, gripper_site_id, t_position, t_rotation, arm_actuator_ids, **ik_params)
+                inverse_kinematics(model, data, gripper_site_id, t_position, t_rotation, arm_actuator_ids, custom_q_nominal=target_q_nom, **ik_params)
                 mujoco.mj_forward(model, data)
 
         mujoco.mj_step(model, data)

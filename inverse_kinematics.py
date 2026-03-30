@@ -2,11 +2,16 @@ import numpy as np
 import mujoco
 
 def inverse_kinematics(model, data, gripper_site_id, t_position, t_rotation, 
-                       arm_actuator_ids, alpha=0.3, k_null=0.05, damping=0.05):
+                       arm_actuator_ids, alpha=0.3, k_null=0.05, damping=0.05, 
+                       rot_weight=1.0, custom_q_nominal=None):
 
     mujoco.mj_kinematics(model, data)
 
-    q_nominal = np.array([0.0, -0.6, 0.0, -1.5, 0.0, 1.6, 0.8])
+    if custom_q_nominal is not None:
+        q_nominal = custom_q_nominal
+    else:
+        q_nominal = np.array([0.0, -0.6, 0.0, -1.5, 0.0, 1.6, 0.8])
+
     actuator_weights = np.array([1, 0.2, 1, 0.5, 1, 1, 1])
     weights_inverse = np.diag(1 / actuator_weights)
     eomg = 0.001
@@ -23,7 +28,7 @@ def inverse_kinematics(model, data, gripper_site_id, t_position, t_rotation,
         rot_err[0,2] - rot_err[2,0],
         rot_err[1,0] - rot_err[0,1]
     ])
-    err = np.concatenate([pos_err, rot_vec * 5])
+    err = np.concatenate([pos_err, rot_vec * rot_weight])
 
     jac_pos = np.zeros((3, model.nv))
     jac_rot = np.zeros((3, model.nv))
@@ -59,7 +64,7 @@ def inverse_kinematics(model, data, gripper_site_id, t_position, t_rotation,
             rot_err[0,2] - rot_err[2,0],
             rot_err[1,0] - rot_err[0,1]
         ])
-        err = np.concatenate([pos_err, rot_vec])
+        err = np.concatenate([pos_err, rot_vec * rot_weight])
 
         data.qpos[:7] = tmp_qpos
         mujoco.mj_forward(model, data)
