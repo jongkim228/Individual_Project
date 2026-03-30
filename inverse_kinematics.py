@@ -7,11 +7,11 @@ def inverse_kinematics(model, data, gripper_site_id, t_position, t_rotation,
     mujoco.mj_kinematics(model, data)
 
     q_nominal = np.array([0.0, -0.6, 0.0, -1.5, 0.0, 1.6, 0.8])
-    actuator_weights = np.array([1, 0.5, 1, 0.5, 1, 0.5, 1])
+    actuator_weights = np.array([1, 0.2, 1, 0.5, 1, 1, 1])
     weights_inverse = np.diag(1 / actuator_weights)
     eomg = 0.001
     ev = 0.0001
-    max_iter = 20
+    max_iter = 100
 
     ee_position = data.site_xpos[gripper_site_id].copy()
     ee_rotation = data.site_xmat[gripper_site_id].reshape(3, 3).copy()
@@ -23,7 +23,7 @@ def inverse_kinematics(model, data, gripper_site_id, t_position, t_rotation,
         rot_err[0,2] - rot_err[2,0],
         rot_err[1,0] - rot_err[0,1]
     ])
-    err = np.concatenate([pos_err, rot_vec])
+    err = np.concatenate([pos_err, rot_vec * 5])
 
     jac_pos = np.zeros((3, model.nv))
     jac_rot = np.zeros((3, model.nv))

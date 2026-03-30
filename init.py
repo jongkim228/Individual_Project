@@ -19,7 +19,7 @@ params = {
     "open_gripper":     {"alpha": 0.5,  "k_null": 0, "damping": 0.05},
     "descend_to_cube":  {"alpha": 0.5,  "k_null": 0, "damping": 0.05},
     "close_gripper":    {"alpha": 0.5,  "k_null": 0, "damping": 0.05},
-    "lift":             {"alpha": 0.5,  "k_null": 0.15, "damping": 0.05},
+    "lift":             {"alpha": 0.5,  "k_null": 0.15, "damping": 0.07},
     "move":             {"alpha": 0.5,  "k_null": 0.15, "damping": 0.05},
     "drop":             {"alpha": 0.5,  "k_null": 0.15, "damping": 0.05},
     "release_gripper":  {"alpha": 0.5,  "k_null": 0.15, "damping": 0.05},
@@ -121,4 +121,6 @@ sorted_boxes = []
 placed_boxes = []
 
 initialized = False
-t_rotation = d_rotation
+t_rotation = d_rotation.copy()
+captured_q_nominal = None
+saved_q_nominal = None

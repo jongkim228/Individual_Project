@@ -24,9 +24,12 @@ def pick_and_place(
     state,
     state_start_time,
     rotation,
-    pack_pos = None,
+    gripper_site_id=None, 
+    t_rotation=None,        
+    pack_pos=None,
     tol=0.04):
     
+    captured_q_nominal = None
 
     box_name = model.body(box_id).name
     geom_id = model.geom(box_name).id
@@ -46,7 +49,7 @@ def pick_and_place(
     target_box_pos = box_pos.copy()
 
     # coordinate for above target box
-    above = np.array([0, 0, 0.2])
+    above = np.array([0, 0, 0.5])
     above_box_pos = target_box_pos + above
 
 
@@ -92,18 +95,19 @@ def pick_and_place(
     #open gripper    
     elif state == "open_gripper":
         data.ctrl[gripper_id] = gripper_open
-        # wait until it opens the gripper
-        if data.time - state_start_time > 0.2:
+        ee_mat = data.site_xmat[gripper_site_id].reshape(3, 3)
+        rot_err_mat = t_rotation @ ee_mat.T
+        rot_err = np.linalg.norm(rot_err_mat - np.eye(3), ord='fro')
+
+        if data.time - state_start_time > 0.3 and rot_err < 0.03:
+            captured_q_nominal = data.qpos[:7].copy()
             next_state = "descend_to_cube"
     
     elif state == "descend_to_cube":
         current = ee_pos.copy()
         goal_position =         np.array([target_box_pos[0],
         target_box_pos[1], 
-        pick_pos[2] ])
-        diff = goal_position - current
-        log_file.write(f"x오차: {diff[0]:.5f}  y오차: {diff[1]:.5f}  z오차: {diff[2]:.5f}  거리: {np.linalg.norm(diff):.5f}\n")
-        log_file.flush()
+        0.02 ])
         
         if reached(current, goal_position, tol=0.05):
             if data.time - state_start_time > 0.3:
@@ -119,7 +123,8 @@ def pick_and_place(
 
     elif state == "lift":
         data.ctrl[gripper_id] = gripper_close
-        goal_position = np.array([pick_pos[0], pick_pos[1], 0.5])
+
+        goal_position = np.array([0.5, -0.2, 0.5])
         if reached(current,goal_position,tol = 0.05):
             next_state = "move"
 
@@ -152,4 +157,4 @@ def pick_and_place(
             next_state = "end"
 
 
-    return next_state, goal_position
+    return next_state, goal_position, captured_q_nominal

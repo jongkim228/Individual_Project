@@ -169,7 +169,18 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                     t_rotation = tall_rotated
                 else:
                     t_rotation = d_rotation
-                next_state, goal_position = pick_and_place(model, data, gripper_id, target_box,target_box_id,  ee_pos, state, state_start_time, pack_pos=target_box_solution, rotation=exceeds_length)
+                
+                next_state, goal_position, captured_q_nominal = pick_and_place(
+                model, data, gripper_id, target_box, target_box_id, ee_pos,
+                state, state_start_time,
+                pack_pos=target_box_solution,
+                rotation=exceeds_length,
+                gripper_site_id=gripper_site_id,  
+                t_rotation=t_rotation)
+
+                if captured_q_nominal is not None:
+                    saved_q_nominal = captured_q_nominal
+
         if next_state != state:
             state_start_time = data.time
             if next_state == "start":
@@ -207,6 +218,12 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         for _ in range(1): 
             if state != "close_gripper":
                 ik_params = params.get(state, {"alpha": 0.3, "k_null": 0.05, "damping": 0.05})
+                
+                if state in ["descend_to_cube", "lift"]:
+                    target_q_nom = saved_q_nominal
+                else:
+                    target_q_nom = None
+                
                 inverse_kinematics(model, data, gripper_site_id, t_position, t_rotation, arm_actuator_ids, **ik_params)
                 mujoco.mj_forward(model, data)
 
