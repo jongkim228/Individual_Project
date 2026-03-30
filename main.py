@@ -204,7 +204,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             t_position = smooth_move(t_position, goal_position, speed=0.3)
         
 
-        for _ in range(30): 
+        for _ in range(1): 
             if state != "close_gripper":
                 ik_params = params.get(state, {"alpha": 0.3, "k_null": 0.05, "damping": 0.05})
                 inverse_kinematics(model, data, gripper_site_id, t_position, t_rotation, arm_actuator_ids, **ik_params)
