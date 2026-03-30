@@ -123,6 +123,10 @@ def pick_and_place(
 
     elif state == "lift":
         data.ctrl[gripper_id] = gripper_close
+        ee_mat = data.site_xmat[gripper_site_id].reshape(3, 3)
+        rot_err_mat = t_rotation @ ee_mat.T
+        rot_err = np.linalg.norm(rot_err_mat - np.eye(3), ord='fro')
+        print(rot_err)
 
         goal_position = np.array([0.5, -0.2, 0.5])
         if reached(current,goal_position,tol = 0.05):
