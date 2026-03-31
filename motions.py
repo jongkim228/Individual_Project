@@ -53,7 +53,7 @@ def pick_and_place(
     above_box_pos = target_box_pos + above
 
 
-    close = np.array([0, 0, - z_value + 0.01])
+    close = np.array([0, 0, - z_value])
 
 
     drop = np.array([0,0,0.01])
@@ -107,7 +107,7 @@ def pick_and_place(
         current = ee_pos.copy()
         goal_position =         np.array([target_box_pos[0],
         target_box_pos[1], 
-        0.02 ])
+        pick_pos[2] ])
         
         if reached(current, goal_position, tol=0.05):
             if data.time - state_start_time > 0.3:
@@ -116,7 +116,7 @@ def pick_and_place(
 
     elif state == "close_gripper":
         goal_position = current
-        data.ctrl[gripper_id] = 0
+        data.ctrl[gripper_id] = gripper_close
         
         if data.time - state_start_time > 0.3:
             next_state = "lift"
@@ -127,15 +127,30 @@ def pick_and_place(
         rot_err_mat = t_rotation @ ee_mat.T
         rot_err = np.linalg.norm(rot_err_mat - np.eye(3), ord='fro')
         print(rot_err)
+        goal_position = np.array([0.5, -0.2, 0.25])
+        if reached(current,goal_position,tol = 0.05):
+            next_state = "lift1"
 
+    elif state == "lift1":
+        data.ctrl[gripper_id] = gripper_close
+        ee_mat = data.site_xmat[gripper_site_id].reshape(3, 3)
+        rot_err_mat = t_rotation @ ee_mat.T
+        rot_err = np.linalg.norm(rot_err_mat - np.eye(3), ord='fro')
+        print(rot_err)
         goal_position = np.array([0.5, -0.2, 0.5])
         if reached(current,goal_position,tol = 0.05):
             next_state = "move"
 
+    
+
     elif state == "move":
+        goal_position = np.array([target_space[0],target_space[1],0.5])
+        if reached(current,goal_position,tol = 0.05):
+            next_state = "move_to_drop"
 
-        goal_position = above_target
 
+    elif state == "move_to_drop":
+        goal_position = np.array([drop_pos[0],drop_pos[1],0.25])
         if reached(current,goal_position,tol = 0.05):
             next_state = "drop"
 

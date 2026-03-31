@@ -212,8 +212,8 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         if state == "close_gripper":
             pass
         else:
-            if state in ["drop", "descend_to_cube"]:
-                t_position = smooth_move(t_position, goal_position, speed=0.05)
+            if state in ["lift","drop", "descend_to_cube"]:
+                t_position = smooth_move(t_position, goal_position, speed=0.02)
             else:
                 t_position = smooth_move(t_position, goal_position, speed=0.3)
         
