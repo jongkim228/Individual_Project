@@ -150,7 +150,7 @@ def pick_and_place(
 
 
     elif state == "move_to_drop":
-        goal_position = np.array([drop_pos[0],drop_pos[1],0.25])
+        goal_position = np.array([drop_pos[0],drop_pos[1],0.3])
         if reached(current,goal_position,tol = 0.05):
             next_state = "drop"
 
