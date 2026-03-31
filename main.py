@@ -212,13 +212,15 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         if state == "close_gripper":
             pass
         else:
-            t_position = smooth_move(t_position, goal_position, speed=0.3)
+            if state in ["drop", "descend_to_cube"]:
+                t_position = smooth_move(t_position, goal_position, speed=0.05)
+            else:
+                t_position = smooth_move(t_position, goal_position, speed=0.3)
         
 
-        for _ in range(1): 
+        for _ in range(30): 
             if state != "close_gripper":
                 ik_params = params.get(state, {"alpha": 0.3, "k_null": 0.05, "damping": 0.05})
-                
                 if state in ["descend_to_cube", "lift"]:
                     target_q_nom = saved_q_nominal
                 else:

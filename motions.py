@@ -3,7 +3,7 @@ import mujoco
 
 log_file = open("error_log.txt", "w")
 
-def smooth_move(current, target, speed=0.1):
+def smooth_move(current, target, speed=0.03):
     diff = target - current
     if np.linalg.norm(diff) < 0.02:
         return target.copy() 
@@ -99,7 +99,7 @@ def pick_and_place(
         rot_err_mat = t_rotation @ ee_mat.T
         rot_err = np.linalg.norm(rot_err_mat - np.eye(3), ord='fro')
 
-        if data.time - state_start_time > 0.3 and rot_err < 0.03:
+        if data.time - state_start_time > 0.3 and rot_err < 0.05:
             captured_q_nominal = data.qpos[:7].copy()
             next_state = "descend_to_cube"
     
@@ -141,6 +141,10 @@ def pick_and_place(
 
     elif state == "drop":
         goal_position = drop_pos
+        ee_mat = data.site_xmat[gripper_site_id].reshape(3, 3)
+        rot_err_mat = t_rotation @ ee_mat.T
+        rot_err = np.linalg.norm(rot_err_mat - np.eye(3), ord='fro')
+        print(rot_err)
         if reached(current, drop_pos, tol=0.05):
             next_state = "release_gripper"
 

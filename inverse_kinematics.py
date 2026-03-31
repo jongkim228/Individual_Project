@@ -12,11 +12,11 @@ def inverse_kinematics(model, data, gripper_site_id, t_position, t_rotation,
     else:
         q_nominal = np.array([0.0, -0.6, 0.0, -1.5, 0.0, 1.6, 0.8])
 
-    actuator_weights = np.array([1, 0.2, 1, 0.5, 1, 1, 1])
+    actuator_weights = np.array([1, 0.5, 1, 0.5, 1, 0.5, 1])
     weights_inverse = np.diag(1 / actuator_weights)
     eomg = 0.001
     ev = 0.0001
-    max_iter = 100
+    max_iter = 2
 
     ee_position = data.site_xpos[gripper_site_id].copy()
     ee_rotation = data.site_xmat[gripper_site_id].reshape(3, 3).copy()
