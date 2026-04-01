@@ -12,29 +12,34 @@ def bounding_box(box_size, rotation):
         return np.array([x,y_width, z])
 
 # placed boxes coordinates
-def territory_calculation(placed_boxes):
+def territory_calculation(placed_boxes, solutions):
     placed_boxes_territory.clear()
-    for i in placed_boxes:
-        geom_id = model.body_geomadr[i]
+    offset = np.zeros(3)
+
+    for box_id, solution in zip(placed_boxes,solutions):
+        geom_id = model.body_geomadr[box_id]
         box_size = model.geom_size[geom_id]
         box_pos = data.geom_xpos[geom_id]
+
+        solver_pos = np.array([solution["x"], solution["y"], solution["z"]])
+        offset = box_pos - solver_pos
 
         max_pos = box_pos + box_size
         min_pos = box_pos - box_size
 
         placed_boxes_territory.append({
-            "id": i,
+            "id": box_id,
             "min": min_pos,
             "max": max_pos
         })
 
-    return placed_boxes_territory
+    return placed_boxes_territory, offset
 
 
-def collision_check(target_box, rotation, placed_boxes, box_solution, solutions):
+def collision_check(target_box, rotation, placed_boxes, box_solution,solutions):
 
     # calculation for placed boxes
-    territory = territory_calculation(placed_boxes)
+    territory, offset = territory_calculation(placed_boxes,solutions)
 
     # target box
     geom_id = model.body_geomadr[target_box]
@@ -45,7 +50,7 @@ def collision_check(target_box, rotation, placed_boxes, box_solution, solutions)
 
     # if box is placed on target place
     if len(territory) > 0:
-        solution_center = np.array([box_solution["x"], box_solution["y"], box_solution["z"]])
+        solution_center = np.array([box_solution["x"], box_solution["y"], box_solution["z"]]) + offset
 
         # calculation for target box with solution
         bound_max = solution_center + bounded_box

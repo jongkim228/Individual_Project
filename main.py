@@ -10,7 +10,7 @@ from detection import calculate_in_local, objects_in_fov, cube_length_check
 from inverse_kinematics import inverse_kinematics
 from packing import box_solution
 from init import *
-from collison import territory_calculation, collision_check
+from collison import territory_calculation, collision_check, offset_calculator
 
 
 with mujoco.viewer.launch_passive(model, data) as viewer:
@@ -105,14 +105,18 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                     valid_box_geom = model.body_geomadr[target_box_id]
                     #check the box length is over the gripper open range
                     exceeds_length = cube_length_check(model,valid_box_geom,gripper_max_open)
+
                     if target_box_solution.get("rotation") == 1:
                         exceeds_length = "long"
+
                     placed_solutions = all_solutions[:len(placed_boxes)]
+
+                    offset_calculator(placed_boxes, target_box_solution)
+
+                    #Check Collision
                     collision_result = collision_check(target_box_id,exceeds_length,placed_boxes,target_box_solution,placed_solutions)
-
-                    collision_result = collision_check(target_box_id, exceeds_length, placed_boxes, target_box_solution,all_solutions)
-
                     print(f"collision_result: {collision_result}")
+
 
                     if collision_result == "collison":
                         exceeds_length = "long"
@@ -125,7 +129,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         elif state == "end":
             #After putting box on the target space
             #put the box id in to placed_boxes list
-            placed_boxes.append(target_box_id)
+            placed_boxes.append(target_box_id)            
 
             # if there are more boxes
             if len(sorted_boxes) > 0:
@@ -137,7 +141,9 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                 #Check the collison and decide how to grab a box
                 exceeds_length = cube_length_check(model, end_box_geom, gripper_max_open)
                 placed_solutions = all_solutions[:len(placed_boxes)]
-
+                
+                territory_calculation(placed_boxes)
+                
                 collision_result = collision_check(target_box_id, exceeds_length, placed_boxes, target_box_solution,all_solutions)
 
                 print(f"collision_result: {collision_result}")
