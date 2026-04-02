@@ -4,7 +4,7 @@ def bounding_box(box_size, rotation):
     print(rotation)
     x, y, z = box_size
 
-    if rotation == "long":
+    if rotation == "z_90_rotated":
         x_width = x + LEFT_FINGER_THICKNESS + RIGHT_FINGER_THICKNESS
         return np.array([x_width, y, z])
     else:
@@ -79,7 +79,26 @@ def collision_check(target_box, rotation, placed_boxes, box_solution,solutions):
 
             print(f"x_overlap: {x_overlap}, y_overlap: {y_overlap}, z_overlap: {z_overlap}")
 
+            
             if x_overlap and y_overlap and z_overlap:
-                z_90_rotation
+
+                if rotation == "z_90_rotated":
+                    other_rotation = "default"
+                else:
+                    other_rotation = "z_90_rotated"
+                
+                new_bounded = bounding_box(box_size, other_rotation)
+                other_max = solution_center + new_bounded
+                other_min = solution_center - new_bounded
+                
+                ox = other_min[0] < x_max and other_max[0] > x_min
+                oy = other_min[1] < y_max and other_max[1] > y_min
+                oz = other_min[2] < z_max and other_max[2] > z_min
+
+
+                
+                
+                
+                
 
     return "safe"
