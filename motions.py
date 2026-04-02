@@ -96,13 +96,23 @@ def pick_and_place(
     elif state == "open_gripper":
         data.ctrl[gripper_id] = gripper_open
 
-        if data.time - state_start_time > 0.2:
+        if data.time - state_start_time > 0.4:
             captured_q_nominal = data.qpos[:7].copy()
-            next_state = "descend_to_cube"
-    
+            next_state = "move_to_above_cube"
+
+    elif state == "move_to_above_cube":
+        goal_position =  np.array([target_box_pos[0],
+        target_box_pos[1], 
+        0.5 ])
+        
+        if reached(current, goal_position, tol=0.05):
+            if data.time - state_start_time > 0.3:
+                next_state = "descend_to_cube"
+
+
     elif state == "descend_to_cube":
         current = ee_pos.copy()
-        goal_position =         np.array([target_box_pos[0],
+        goal_position =  np.array([target_box_pos[0],
         target_box_pos[1], 
         pick_pos[2] ])
         
@@ -138,18 +148,16 @@ def pick_and_place(
 
     elif state == "drop":
         goal_position = drop_pos
-
         if reached(current, drop_pos, tol=0.05):
             next_state = "release_gripper"
 
     elif state == "release_gripper":
-        data.ctrl[gripper_id] = gripper_open
-        next_state = "move_to_default"
+        if data.time - state_start_time > 0.2:
+            data.ctrl[gripper_id] = gripper_open
+            next_state = "move_to_default"
 
     elif state == "move_to_default":
-        if data.time - state_start_time > 0.3:
             goal_position = above_target
-
             if reached(current,goal_position,tol):
                 next_state = "move_to_start"
 
@@ -157,6 +165,5 @@ def pick_and_place(
         goal_position = lift_pos
         if reached(current,goal_position,tol):
             next_state = "end"
-
 
     return next_state, goal_position, captured_q_nominal
