@@ -47,6 +47,7 @@ def collision_check(target_box, rotation, placed_boxes, box_solution,solutions):
 
     # bound box with gripper
     bounded_box = bounding_box(box_size, rotation)
+    print(f"bounded_box: {bounded_box}")
 
     # if box is placed on target place
     if len(territory) > 0:

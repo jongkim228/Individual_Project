@@ -14,9 +14,9 @@ arm_actuator_ids = np.array([model.actuator(name).id for name in arm_actuator_na
 gripper_id = model.actuator("actuator8").id
 
 params = {
-    "wait":             {"alpha": 0.7,  "k_null": 0.3, "damping": 0.05},
+    "wait":             {"alpha": 0.9,  "k_null": 0.3, "damping": 0.05},
     "start":            {"alpha": 0.9,  "k_null": 0, "damping": 0.05},
-    "open_gripper":     {"alpha": 0.5,  "k_null": 0, "damping": 0.05},
+    "open_gripper":     {"alpha": 0.9,  "k_null": 0, "damping": 0.05},
     "descend_to_cube":  {"alpha": 0.3,  "k_null": 0, "damping": 0.05, "rot_weight": 5},
     "close_gripper":    {"alpha": 0.5,  "k_null": 0, "damping": 0.05},
     "lift":             {"alpha": 0.3, "k_null": 0, "damping": 0.05, "rot_weight": 5},
@@ -43,20 +43,22 @@ for i in range(model.ngeom):
     bodyid = model.geom(i).bodyid
     bodyname = model.body(bodyid).name
     if "left_finger" in bodyname:
-        size = model.geom(i).size
-        pos = model.geom(i).pos
-        x_end = abs(pos[0]) + size[0]
-        L_max = max(L_max, x_end)
+        if model.geom(i).type == mujoco.mjtGeom.mjGEOM_BOX:
+            size = model.geom(i).size
+            pos = model.geom(i).pos
+            y_end = abs(pos[1]) + size[1]
+            L_max = max(L_max, y_end)
 
     if "right_finger" in bodyname:
-        size = model.geom(i).size
-        pos = model.geom(i).pos
-        x_end = abs(pos[0]) + size[0]
-        R_max = max(R_max, x_end)
+        if model.geom(i).type == mujoco.mjtGeom.mjGEOM_BOX:
+            size = model.geom(i).size
+            pos = model.geom(i).pos
+            y_end = abs(pos[1]) + size[1]
+            R_max = max(R_max, y_end)
 
 
-LEFT_FINGER_THICKNESS = L_max * 2
-RIGHT_FINGER_THICKNESS = R_max * 2
+LEFT_FINGER_THICKNESS = L_max
+RIGHT_FINGER_THICKNESS = R_max
 
 
 

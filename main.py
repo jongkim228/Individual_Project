@@ -10,7 +10,7 @@ from detection import calculate_in_local, objects_in_fov, cube_length_check
 from inverse_kinematics import inverse_kinematics
 from packing import box_solution
 from init import *
-from collison import territory_calculation, collision_check, offset_calculator
+from collison import territory_calculation, collision_check
 
 
 with mujoco.viewer.launch_passive(model, data) as viewer:
@@ -111,8 +111,6 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
                     placed_solutions = all_solutions[:len(placed_boxes)]
 
-                    offset_calculator(placed_boxes, target_box_solution)
-
                     #Check Collision
                     collision_result = collision_check(target_box_id,exceeds_length,placed_boxes,target_box_solution,placed_solutions)
                     print(f"collision_result: {collision_result}")
@@ -142,8 +140,8 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                 exceeds_length = cube_length_check(model, end_box_geom, gripper_max_open)
                 placed_solutions = all_solutions[:len(placed_boxes)]
                 
-                territory_calculation(placed_boxes)
-                
+                territory_calculation(placed_boxes,placed_solutions)
+
                 collision_result = collision_check(target_box_id, exceeds_length, placed_boxes, target_box_solution,all_solutions)
 
                 print(f"collision_result: {collision_result}")
@@ -219,10 +217,10 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             pass
         else:
 
-            t_position = smooth_move(t_position, goal_position, speed=0.3)
+            t_position = smooth_move(t_position, goal_position, speed=0.7)
         
 
-        for _ in range(30): 
+        for _ in range(15): 
             if state != "close_gripper":
                 ik_params = params.get(state, {"alpha": 0.3, "k_null": 0.05, "damping": 0.05})
                 if state in ["descend_to_cube", "lift"]:
