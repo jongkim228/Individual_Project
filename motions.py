@@ -121,18 +121,9 @@ def pick_and_place(
     elif state == "lift":
         data.ctrl[gripper_id] = gripper_close
 
-        goal_position = np.array([0.5, -0.2, 0.25])
-        if reached(current,goal_position,tol = 0.05):
-            next_state = "lift1"
-
-    elif state == "lift1":
-        data.ctrl[gripper_id] = gripper_close
-
         goal_position = np.array([0.5, -0.2, 0.5])
         if reached(current,goal_position,tol = 0.05):
             next_state = "move"
-
-    
 
     elif state == "move":
         goal_position = np.array([target_space[0],target_space[1],0.5])
