@@ -96,7 +96,7 @@ def pick_and_place(
     elif state == "open_gripper":
         data.ctrl[gripper_id] = gripper_open
 
-        if data.time - state_start_time > 0.4:
+        if data.time - state_start_time > 0.2:
             captured_q_nominal = data.qpos[:7].copy()
             next_state = "move_to_above_cube"
 
@@ -157,7 +157,7 @@ def pick_and_place(
             next_state = "move_to_default"
 
     elif state == "move_to_default":
-            goal_position = above_target
+            goal_position = np.array([drop_pos[0], drop_pos[1], 0.5])
             if reached(current,goal_position,tol):
                 next_state = "move_to_start"
 

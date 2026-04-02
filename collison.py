@@ -79,8 +79,7 @@ def collision_check(target_box, rotation, placed_boxes, box_solution,solutions):
 
             print(f"x_overlap: {x_overlap}, y_overlap: {y_overlap}, z_overlap: {z_overlap}")
 
-            if rotation == "long":
-                if x_overlap and y_overlap and z_overlap:
-                    return "collison"
+            if x_overlap and y_overlap and z_overlap:
+                z_90_rotation
 
     return "safe"

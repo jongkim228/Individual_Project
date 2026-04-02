@@ -164,8 +164,6 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
                 if exceeds_length == "long":
                     t_rotation = long_rotated
-                elif exceeds_length == "tall":
-                    t_rotation = tall_rotated
                 else:
                     t_rotation = d_rotation
                 
@@ -215,7 +213,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             t_position = smooth_move(t_position, goal_position, speed=0.7)
         
 
-        for _ in range(30): 
+        for _ in range(3): 
             if state != "close_gripper":
                 ik_params = params.get(state, {"alpha": 0.3, "k_null": 0.05, "damping": 0.05})
                 if state in ["descend_to_cube", "lift"]:
