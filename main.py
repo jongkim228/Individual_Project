@@ -109,7 +109,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                     placed_solutions = all_solutions[:len(placed_boxes)]
 
                     #Check Collision
-                    collision_result = collision_check(target_box_id,exceeds_length,placed_boxes,target_box_solution,placed_solutions)
+                    collision_rotate = collision_check(target_box_id,exceeds_length,placed_boxes,target_box_solution,placed_solutions)
                     print(f"collision_result: {collision_result}")
 
 
@@ -162,7 +162,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                 valid_geom = model.body_geomadr[target_box_id]
                 target_box = data.geom_xpos[valid_geom].copy()
 
-                if exceeds_length == "long":
+                if exceeds_length == "long" or collison_rotate == "rotate":
                     t_rotation = long_rotated
                 else:
                     t_rotation = d_rotation

@@ -95,9 +95,10 @@ def collision_check(target_box, rotation, placed_boxes, box_solution,solutions):
                 oy = other_min[1] < y_max and other_max[1] > y_min
                 oz = other_min[2] < z_max and other_max[2] > z_min
 
-
-                
-                
+                if ox and oy and oz:
+                    return "drop"
+                else:
+                    return "rotate"
                 
                 
 
