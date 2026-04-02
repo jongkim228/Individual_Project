@@ -152,8 +152,8 @@ def pick_and_place(
             next_state = "release_gripper"
 
     elif state == "release_gripper":
-        if data.time - state_start_time > 0.2:
-            data.ctrl[gripper_id] = gripper_open
+        data.ctrl[gripper_id] = gripper_open
+        if data.time - state_start_time > 0.3:
             next_state = "move_to_default"
 
     elif state == "move_to_default":
