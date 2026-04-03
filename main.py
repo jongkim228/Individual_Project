@@ -142,7 +142,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                 exceeds_length = cube_length_check(model, end_box_geom, gripper_max_open)
                 placed_solutions = all_solutions[:len(placed_boxes)]
                 
-                territory_calculation(placed_boxes,placed_solutions)
+                territory, offset = territory_calculation(placed_boxes,placed_solutions)
 
                
                 
