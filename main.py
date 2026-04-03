@@ -104,24 +104,13 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
                     valid_box_geom = model.body_geomadr[target_box_id]
                     #check the box length is over the gripper open range
-                    exceeds_length = cube_length_check(model,valid_box_geom,gripper_max_open)
+                    grip_dir = cube_length_check(model,valid_box_geom,gripper_max_open)
 
                     placed_solutions = all_solutions[:len(placed_boxes)]
 
 
-                    if exceeds_length == "long":
-                        grip_dir = "x_axis"
-                    else:
-                        grip_dir ="y_axis"
-
                     #Check Collision
-                    collision_rotate = collision_check(target_box_id,grip_dir,placed_boxes,target_box_solution,placed_solutions)
-
-                    if collision_rotate == "rotate":
-                        if grip_dir == "x_axis":
-                            grip_dir = "y_axis"
-                        else:
-                            grip_dir = "x_axis"
+                    collision_rotate, grip_dir = collision_check(target_box_id,grip_dir,placed_boxes,target_box_solution,placed_solutions)
                     
                     next_state = "start"
                     
@@ -139,33 +128,17 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                 end_box_geom = model.body_geomadr[target_box_id]
 
                 #Check the collison and decide how to grab a box
-                exceeds_length = cube_length_check(model, end_box_geom, gripper_max_open)
+                grip_dir = cube_length_check(model, end_box_geom, gripper_max_open)
                 placed_solutions = all_solutions[:len(placed_boxes)]
-                
-                territory, offset = territory_calculation(placed_boxes,placed_solutions)
 
-               
-                
-
-                if exceeds_length == "long":
-                    grip_dir = "x_axis"
-                else:
-                    grip_dir = "y_axis"
-
-                collision_rotate = collision_check(target_box_id, grip_dir, placed_boxes, target_box_solution,all_solutions)
-                print(f"collision_result: {collision_rotate}")
-
-                if collision_rotate == "rotate":
-                    if grip_dir == "x_axis":
-                        grip_dir = "y_axis"
-                    else:
-                        grip_dir = "x_axis"
+                collision_rotate,grip_dir = collision_check(target_box_id, grip_dir, placed_boxes, target_box_solution,placed_solutions)
+                print(f"collision_result: {collision_rotate}")  
 
                 next_state = "start"
 
             else:
                 target_box_id = None
-                exceeds_length = None
+                grip_dir = None
                 next_state = "wait"
 
             state_start_time = data.time
@@ -185,7 +158,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                 model, data, gripper_id, target_box, target_box_id, ee_pos,
                 state, state_start_time,
                 pack_pos=target_box_solution,
-                rotation=exceeds_length,
+                grip_dir=grip_dir,
                 gripper_site_id=gripper_site_id,  
                 t_rotation=t_rotation)
 
@@ -227,7 +200,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             t_position = smooth_move(t_position, goal_position, speed=0.7)
         
 
-        for _ in range(3): 
+        for _ in range(30): 
             if state != "close_gripper":
                 ik_params = params.get(state, {"alpha": 0.3, "k_null": 0.05, "damping": 0.05})
                 if state in ["descend_to_cube", "lift"]:

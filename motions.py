@@ -23,7 +23,7 @@ def pick_and_place(
     ee_pos,
     state,
     state_start_time,
-    rotation,
+    grip_dir,
     gripper_site_id=None, 
     t_rotation=None,        
     pack_pos=None,

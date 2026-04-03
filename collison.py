@@ -118,5 +118,5 @@ def collision_check(target_box, grip_dir, placed_boxes, box_solution,solutions):
             else:
                 return "rotate", other_dir
             
-        else:
-            return "safe", grip_dir
+        
+    return "safe", grip_dir
