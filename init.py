@@ -127,3 +127,4 @@ t_rotation = d_rotation.copy()
 captured_q_nominal = None
 saved_q_nominal = None
 collison_rotate = "safe"
+grip_dir = "y_axis"
