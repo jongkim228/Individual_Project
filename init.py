@@ -100,22 +100,15 @@ z_90_rotation = np.array([
         [0,0,1]
 ])
 
-y_90_rotation = np.array([
-    [c,0,s],
-    [0,1,0],
-    [-s,0,c]
-])
 
 
 long_rotated = d_rotation @ z_90_rotation
-tall_rotated = d_rotation @ y_90_rotation
 
 num_box = 0
 placed_boxes_territory = []
 
 valid_boxes = []     
 target_box_id = None  
-exceeds_length = None
 target_pack_pos = None
 packing_result = []
 areas = []
@@ -127,4 +120,4 @@ t_rotation = d_rotation.copy()
 captured_q_nominal = None
 saved_q_nominal = None
 collison_rotate = "safe"
-grip_dir = "y_axis"
+grip_dir = "None"
