@@ -197,7 +197,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             pass
         else:
 
-            t_position = smooth_move(t_position, goal_position, speed=0.7)
+            t_position = smooth_move(t_position, goal_position, speed=0.5)
         
 
         for _ in range(30): 

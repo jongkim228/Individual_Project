@@ -90,33 +90,33 @@ def collision_check(target_box, grip_dir, placed_boxes, box_solution,solutions):
             else:
                 other_dir = "x_axis"   
 
-        new_bounded = bounding_box(box_size, other_dir)
-        bound_max = solution_center + new_bounded
-        bound_min = solution_center - new_bounded
+            new_bounded = bounding_box(box_size, other_dir)
+            bound_max = solution_center + new_bounded
+            bound_min = solution_center - new_bounded
 
-        other_collide = False
+            other_collide = False
 
-        for box in territory:
-            x_min = box["min"][0]
-            x_max = box["max"][0]
+            for box in territory:
+                x_min = box["min"][0]
+                x_max = box["max"][0]
 
-            y_min = box["min"][1]
-            y_max = box["max"][1]
+                y_min = box["min"][1]
+                y_max = box["max"][1]
 
-            z_min = box["min"][2]
-            z_max = box["max"][2]
+                z_min = box["min"][2]
+                z_max = box["max"][2]
 
-            x_overlap = bound_min[0] < x_max and bound_max[0] > x_min
-            y_overlap = bound_min[1] < y_max and bound_max[1] > y_min
-            z_overlap = bound_min[2] < z_max and bound_max[2] > z_min
+                x_overlap = bound_min[0] < x_max and bound_max[0] > x_min
+                y_overlap = bound_min[1] < y_max and bound_max[1] > y_min
+                z_overlap = bound_min[2] < z_max and bound_max[2] > z_min
 
-            if x_overlap and y_overlap and z_overlap:
-                other_collide = True
-                break
-            if other_collide:
-                return "drop", grip_dir
-            else:
-                return "rotate", other_dir
+                if x_overlap and y_overlap and z_overlap:
+                    other_collide = True
+                    break
+                if other_collide:
+                    return "drop", grip_dir
+                else:
+                    return "rotate", other_dir
             
         
     return "safe", grip_dir
