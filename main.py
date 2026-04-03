@@ -110,10 +110,10 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
                     #Check Collision
                     collision_rotate = collision_check(target_box_id,exceeds_length,placed_boxes,target_box_solution,placed_solutions)
-                    print(f"collision_result: {collision_result}")
+                    print(f"collision_result: {collision_rotate}")
 
 
-                    if collision_result == "collison":
+                    if collision_rotate == "collison":
                         exceeds_length = "long"
                     
                     next_state = "start"
@@ -137,15 +137,22 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                 
                 territory_calculation(placed_boxes,placed_solutions)
 
-                collision_result = collision_check(target_box_id, exceeds_length, placed_boxes, target_box_solution,all_solutions)
+               
+                
 
-                print(f"collision_result: {collision_result}")
+                if exceeds_length == "long":
+                    grip_dir = "x_axis"
+                else:
+                    grip_dir = "y_axis"
 
-                if collision_result == "collison":
-                    if exceeds_length == "long":
-                        exceeds_length = "default"
+                collision_rotate = collision_check(target_box_id, exceeds_length, placed_boxes, target_box_solution,all_solutions)
+                print(f"collision_result: {collision_rotate}")
+
+                if collision_rotate == "rotate":
+                    if grip_dir == "x_axis":
+                        grip_dir = "y_axis"
                     else:
-                        exceeds_length = "long"
+                        grip_dir = "x_axis"
 
                 next_state = "start"
 
@@ -162,7 +169,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                 valid_geom = model.body_geomadr[target_box_id]
                 target_box = data.geom_xpos[valid_geom].copy()
 
-                if exceeds_length == "long" or collison_rotate == "rotate":
+                if grip_dir == "x_axis" or collison_rotate == "long":
                     t_rotation = long_rotated
                 else:
                     t_rotation = d_rotation

@@ -1,10 +1,10 @@
 from init import *
 
-def bounding_box(box_size, rotation):
-    print(rotation)
+def bounding_box(box_size, grip_dir):
+
     x, y, z = box_size
 
-    if rotation == "z_90_rotated":
+    if grip_dir == "x_axis":
         x_width = x + LEFT_FINGER_THICKNESS + RIGHT_FINGER_THICKNESS
         return np.array([x_width, y, z])
     else:
@@ -36,7 +36,7 @@ def territory_calculation(placed_boxes, solutions):
     return placed_boxes_territory, offset
 
 
-def collision_check(target_box, rotation, placed_boxes, box_solution,solutions):
+def collision_check(target_box, grip_dir, placed_boxes, box_solution,solutions):
 
     # calculation for placed boxes
     territory, offset = territory_calculation(placed_boxes,solutions)
@@ -46,7 +46,7 @@ def collision_check(target_box, rotation, placed_boxes, box_solution,solutions):
     box_size = model.geom_size[geom_id]
 
     # bound box with gripper
-    bounded_box = bounding_box(box_size, rotation)
+    bounded_box = bounding_box(box_size, grip_dir)
     print(f"bounded_box: {bounded_box}")
 
     # if box is placed on target place
@@ -82,12 +82,12 @@ def collision_check(target_box, rotation, placed_boxes, box_solution,solutions):
             
             if x_overlap and y_overlap and z_overlap:
 
-                if rotation == "z_90_rotated":
-                    other_rotation = "default"
+                if grip_dir == "x_axis":
+                    other_dir = "y_axis"
                 else:
-                    other_rotation = "z_90_rotated"
+                    other_dir = "x_axis"
                 
-                new_bounded = bounding_box(box_size, other_rotation)
+                new_bounded = bounding_box(box_size, other_dir)
                 other_max = solution_center + new_bounded
                 other_min = solution_center - new_bounded
                 
