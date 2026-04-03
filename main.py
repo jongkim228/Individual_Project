@@ -112,7 +112,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                     if exceeds_length == "long":
                         grip_dir = "x_axis"
                     else:
-                        grip_dir = "y_axis"
+                        grip_dir ="y_axis"
 
                     #Check Collision
                     collision_rotate = collision_check(target_box_id,grip_dir,placed_boxes,target_box_solution,placed_solutions)

@@ -5,9 +5,7 @@ import subprocess
 SCALE = 1000
 MARGIN = 0.002
 
-
-def box_solution(data,model,boxes,placed_boxes):
-
+def box_solution(data, model, boxes, placed_boxes):
     target_space_id = model.body("target_space").id
     target_pos = data.xpos[target_space_id]
 
@@ -16,79 +14,78 @@ def box_solution(data,model,boxes,placed_boxes):
     length = size[0] * 2
     width = size[1] * 2
 
-    
-
     floor_area = length * width
-    placed_area = 0
+
+    total_area = 0
     for i in placed_boxes:
         box_geom_id = model.body_geomadr[i]
         located_box_size = model.geom_size[box_geom_id]
-        usage = located_box_size[0] * located_box_size[1] * 4
-        placed_area += usage
+        total_area += located_box_size[0] * located_box_size[1] * 4
 
-    area_usage = placed_area / floor_area
+    for i in boxes:
+        box_geom_id = model.body_geomadr[i]
+        located_box_size = model.geom_size[box_geom_id]
+        total_area += located_box_size[0] * located_box_size[1] * 4
 
-    if area_usage >= 0.08:
-        height = 0.16
+    area_usage = total_area / floor_area
+
+    if area_usage > 1.0:
+        height = 0.5
     else:
         height = 0.08
 
     csv_box = []
-
     for body_id in boxes:
         geom_id = model.body_geomadr[body_id]
-        box_size = model.geom_size[geom_id] * 2     
+        box_size = model.geom_size[geom_id] * 2
         csv_box.append(box_size)
-
-    
-
 
     with open("items.csv", "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=["X", "Y", "Z", "ROTATIONS", "COPIES"])
-        writer.writeheader()                          
+        writer.writeheader()
         for x, y, z in csv_box:
             writer.writerow({
-                "X": int((x+MARGIN * 2)  * SCALE), "Y": int((y+MARGIN * 2) * SCALE) ,"Z": int((z*SCALE)),
-                "ROTATIONS": 1, 
+                "X": int((x + MARGIN * 2) * SCALE),
+                "Y": int((y + MARGIN * 2) * SCALE),
+                "Z": int(z * SCALE),
+                "ROTATIONS": 1,
                 "COPIES": 1
             })
 
-    with open("bins.csv","w",newline="") as f:
+    with open("bins.csv", "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=["X", "Y", "Z"])
-        writer.writeheader()  
+        writer.writeheader()
         writer.writerow({
             "X": int(length * SCALE),
             "Y": int(width * SCALE),
             "Z": int(height * SCALE)
         })
 
-
-    with open("parameters.csv","w",newline="") as f:
+    with open("parameters.csv", "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=["NAME", "VALUE"])
-        writer.writeheader()  
+        writer.writeheader()
         writer.writerow({
             "NAME": "objective", "VALUE": "bin-packing"
         })
 
+    result = subprocess.run([
+        "./packingsolver/build/src/box/packingsolver_box",
+        "--items", "items.csv",
+        "--verbosity-level", "0",
+        "--bins", "bins.csv",
+        "--parameters", "parameters.csv",
+        "--certificate", "solutions.csv",
+        "--time-limit", "10",
+    ], capture_output=True, text=True)
+    print(result.stdout)
+    print(result.stderr)
 
-    subprocess.run([
-    "./packingsolver/build/src/box/packingsolver_box",
-    "--items", "items.csv",
-     "--verbosity-level", "0",
-    "--bins", "bins.csv",
-    "--parameters", "parameters.csv",
-    "--certificate", "solutions.csv",
-    "--time-limit", "10",
-])
-    
     with open("solutions.csv", "r") as f:
-        print(f.read()) 
-    
+        print(f.read())
+
     origin_x = target_pos[0] - length / 2
     origin_y = target_pos[1] - width / 2
     origin_z = target_pos[2]
-
-    
 
     results = []
     with open("solutions.csv", "r") as f:
@@ -101,19 +98,14 @@ def box_solution(data,model,boxes,placed_boxes):
                 lx = int(row["LX"]) / SCALE - MARGIN * 2
                 ly = int(row["LY"]) / SCALE - MARGIN * 2
 
-                rotation = 1 if abs(lx - box_size[1]) < 0.001 else 0
+                rotation = int(row.get("ROTATION", 0))
 
-                rotation = int(row.get("ROTATION",0))
-
-                results.append(
-                    {
+                results.append({
                     "id":       item_id,
                     "x":        origin_x + int(row["X"]) / SCALE + MARGIN + lx / 2,
                     "y":        origin_y + int(row["Y"]) / SCALE + MARGIN + ly / 2,
                     "z":        origin_z + int(row["Z"]) / SCALE + box_size[2] / 2,
                     "rotation": rotation
-                    }
-                )
+                })
 
     return results
-
