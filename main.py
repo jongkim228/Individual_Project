@@ -98,6 +98,9 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                 #Box on valid space
                 if len(sorted_boxes) > 0:
                     packing_result = box_solution(data, model, sorted_boxes,placed_boxes)
+                    if len(packing_result) == 0:
+                        print("No Packing Solution Found")
+                        break
                     all_solutions = packing_result.copy()
                     target_box_solution = packing_result.pop(0)
                     target_box_id = sorted_boxes.pop(0)
@@ -200,7 +203,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             t_position = smooth_move(t_position, goal_position, speed=0.5)
         
 
-        for _ in range(30): 
+        for _ in range(10): 
             if state != "close_gripper":
                 ik_params = params.get(state, {"alpha": 0.3, "k_null": 0.05, "damping": 0.05})
                 if state in ["descend_to_cube", "lift"]:
