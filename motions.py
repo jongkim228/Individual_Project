@@ -15,6 +15,7 @@ def reached(ee_pos, goal_pos, tol):
 
     
 def pick_and_place(    
+    fixed_box_xy,
     model,
     data,
     gripper_id,
@@ -80,7 +81,6 @@ def pick_and_place(
     current = ee_pos.copy()
 
 
-
     if pack_pos is not None:
         drop_pos = np.array([pack_pos["x"], pack_pos["y"], pack_pos["z"] - 0.03])
         
@@ -126,6 +126,7 @@ def pick_and_place(
 
     elif state == "close_gripper":
         goal_position = current
+        fixed_box_xy = current[:2].copy()
         data.ctrl[gripper_id] = gripper_close
         
         if data.time - state_start_time > 0.3:
@@ -133,9 +134,8 @@ def pick_and_place(
 
     elif state == "lift":
         data.ctrl[gripper_id] = gripper_close
+        goal_position = np.array([fixed_box_xy[0],fixed_box_xy[1],0.5])
 
-        goal_position = np.array([0.5, -0.2, 0.5])
-        data.ctrl[gripper_id] = gripper_close
 
         if reached(current,goal_position,tol = 0.05):
             next_state = "rotate_check"
@@ -150,24 +150,29 @@ def pick_and_place(
             z_90 = np.array([[c, -s, 0], [s, c, 0], [0, 0, 1]])
             t_rotation = d_rotation @ z_90
             print("Rotating: Z-Axis 90")
+            if data.time - state_start_time > 0.5:
+                next_state = "move_to_center"
 
         elif pack_rotation == 2:
             y_90 = np.array([[c, 0, s], [0, 1, 0], [-s, 0, c]])
             t_rotation = d_rotation @ y_90
             print("Rotating: Y-Axis 90")
+            if data.time - state_start_time > 0.5:
+                next_state = "move_to_center"
 
         elif pack_rotation == 3:
             x_90 = np.array([[1, 0, 0], [0, c, -s], [0, s, c]])
             t_rotation = d_rotation @ x_90                
-            print("Rotating: X-Axis 90°")
+            print("Rotating: X-Axis 90")
+            if data.time - state_start_time > 0.5:
+                next_state = "move_to_center"
 
-            ee_z_axis = data.xmat[gripper_site_id].reshape(3, 3)[:, 2]
-            target_z_axis = t_rotation[:, 2]
-            rot_err = np.linalg.norm(ee_z_axis - target_z_axis)
-
-            if rot_err < 0.05:
-                next_state = "move"
         else:
+            next_state = "move_to_center"
+
+    elif state == "move_to_center":
+        goal_position = np.array([start_space[0], start_space[1], 0.5])
+        if reached(current,goal_position,tol = 0.05):
             next_state = "move"
 
     elif state == "move":
@@ -201,4 +206,4 @@ def pick_and_place(
         if reached(current,goal_position,tol):
             next_state = "end"
 
-    return next_state, goal_position, captured_q_nominal
+    return next_state, goal_position, captured_q_nominal, t_rotation

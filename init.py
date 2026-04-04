@@ -122,3 +122,5 @@ captured_q_nominal = None
 saved_q_nominal = None
 collison_rotate = "safe"
 grip_dir = "None"
+
+fixed_box_xy = None

@@ -104,6 +104,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                     all_solutions = packing_result.copy()
                     target_box_solution = packing_result.pop(0)
                     target_box_id = sorted_boxes.pop(0)
+                    fixed_box_xy = data.xpos[target_box_id]
 
                     valid_box_geom = model.body_geomadr[target_box_id]
                     #check the box length is over the gripper open range
@@ -157,7 +158,8 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                 else:
                     t_rotation = d_rotation
                 
-                next_state, goal_position, captured_q_nominal = pick_and_place(
+                next_state, goal_position, captured_q_nominal, t_rotation = pick_and_place(
+                    fixed_box_xy,
                 model, data, gripper_id, target_box, target_box_id, ee_pos,
                 state, state_start_time,
                 d_rotation,
@@ -172,18 +174,24 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         if next_state != state:
             state_start_time = data.time
             if next_state == "start":
-                print("--------------------")
+                print("==============================")
                 print("Started Moving Boxes")
             elif next_state == "open_gripper":
                 print("Open Gripper")
+            elif next_state == "move_to_above_cube":
+                print("Move to above cube")
             elif next_state == "descend_to_cube":
                 print("Approach to the box")
             elif next_state == "close_gripper":
                 print("Close Gripper")
             elif next_state == "lift":
                 print("Lift the box")
+            elif next_state == "rotate_check":
+                print("Check rotation")
             elif next_state == "move":
                 print("Move to target position")
+            elif next_state == "move_to_drop":
+                print("Move to drop position")
             elif next_state == "drop":
                 print("Approach to drop")
             elif next_state == "release_gripper":
@@ -201,7 +209,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             pass
         else:
 
-            t_position = smooth_move(t_position, goal_position, speed=0.5)
+            t_position = smooth_move(t_position, goal_position, speed=0.05)
         
 
         for _ in range(10): 
