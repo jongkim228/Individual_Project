@@ -142,6 +142,7 @@ def pick_and_place(
 
     elif state == "rotate_check":
         data.ctrl[gripper_id] = gripper_close
+        goal_position = current.copy()
         pack_rotation = pack_pos["rotation"]
         c, s = np.cos(np.pi/2), np.sin(np.pi/2)
 
@@ -154,6 +155,11 @@ def pick_and_place(
             y_90 = np.array([[c, 0, s], [0, 1, 0], [-s, 0, c]])
             t_rotation = d_rotation @ y_90
             print("Rotating: Y-Axis 90")
+
+        elif pack_rotation == 3:
+            x_90 = np.array([[1, 0, 0], [0, c, -s], [0, s, c]])
+            t_rotation = d_rotation @ x_90                
+            print("Rotating: X-Axis 90°")
 
             ee_z_axis = data.xmat[gripper_site_id].reshape(3, 3)[:, 2]
             target_z_axis = t_rotation[:, 2]

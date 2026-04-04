@@ -8,9 +8,9 @@ def cube_length_check(model, target_geom_id,gripper_max_open):
         return "tall"
 
     elif box_size[1] * 2 > gripper_max_open:
-        return "long"
+        return "x_axis"
     else: 
-        return "default"
+        return "y_axis"
 
 
 def calculate_in_local(model, data, camera_name, target_geom_id):

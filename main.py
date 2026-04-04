@@ -160,6 +160,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                 next_state, goal_position, captured_q_nominal = pick_and_place(
                 model, data, gripper_id, target_box, target_box_id, ee_pos,
                 state, state_start_time,
+                d_rotation,
                 pack_pos=target_box_solution,
                 grip_dir=grip_dir,
                 gripper_site_id=gripper_site_id,  
