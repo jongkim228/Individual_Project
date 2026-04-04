@@ -78,6 +78,15 @@ def pick_and_place(
     goal_position = ee_pos.copy()
     current = ee_pos.copy()
 
+    rotation_names = {
+    0: "No rotation",
+    1: "Z-axis 90°",
+    2: "Y-axis 90°",
+    3: "X-axis 90°"
+    }
+
+
+
     if pack_pos is not None:
         drop_pos = np.array([pack_pos["x"], pack_pos["y"], pack_pos["z"] - 0.03])
         
@@ -138,9 +147,9 @@ def pick_and_place(
             next_state = "rotate_check"
 
     elif state == "rotate_check":
-        if rotate:
+        pack_pos["rotation"]
             c, s = np.cos(np.pi/2), np.sin(np.pi/2)
-
+            pack_
             if pack_rotation == "z_90":
                 z_90 = np.array([[c, -s, 0], [s, c, 0], [0, 0, 1]])
                 t_rotation = d_rotation @ z_90
