@@ -23,6 +23,7 @@ def pick_and_place(
     ee_pos,
     state,
     state_start_time,
+    d_rotation,
     grip_dir,
     gripper_site_id=None, 
     t_rotation=None,        
@@ -77,13 +78,6 @@ def pick_and_place(
     next_state = state
     goal_position = ee_pos.copy()
     current = ee_pos.copy()
-
-    rotation_names = {
-    0: "No rotation",
-    1: "Z-axis 90°",
-    2: "Y-axis 90°",
-    3: "X-axis 90°"
-    }
 
 
 
@@ -147,17 +141,19 @@ def pick_and_place(
             next_state = "rotate_check"
 
     elif state == "rotate_check":
-        pack_pos["rotation"]
-            c, s = np.cos(np.pi/2), np.sin(np.pi/2)
-            pack_
-            if pack_rotation == "z_90":
-                z_90 = np.array([[c, -s, 0], [s, c, 0], [0, 0, 1]])
-                t_rotation = d_rotation @ z_90
-                print("Rotating: Z-Axis 90")
-            elif pack_rotation == "y_90":
-                y_90 = np.array([[c, 0, s], [0, 1, 0], [-s, 0, c]])
-                t_rotation = d_rotation @ y_90
-                print("Rotating: Y-Axis 90")
+        data.ctrl[gripper_id] = gripper_close
+        pack_rotation = pack_pos["rotation"]
+        c, s = np.cos(np.pi/2), np.sin(np.pi/2)
+
+        if  pack_rotation == 1:
+            z_90 = np.array([[c, -s, 0], [s, c, 0], [0, 0, 1]])
+            t_rotation = d_rotation @ z_90
+            print("Rotating: Z-Axis 90")
+
+        elif pack_rotation == 2:
+            y_90 = np.array([[c, 0, s], [0, 1, 0], [-s, 0, c]])
+            t_rotation = d_rotation @ y_90
+            print("Rotating: Y-Axis 90")
 
             ee_z_axis = data.xmat[gripper_site_id].reshape(3, 3)[:, 2]
             target_z_axis = t_rotation[:, 2]
