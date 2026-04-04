@@ -108,7 +108,7 @@ def pick_and_place(
         target_box_pos[1], 
         0.5 ])
         
-        if reached(current, goal_position, tol=0.05):
+        if reached(current, goal_position, tol=0.03):
             if data.time - state_start_time > 0.3:
                 next_state = "descend_to_cube"
 
@@ -119,7 +119,7 @@ def pick_and_place(
         target_box_pos[1], 
         pick_pos[2] ])
         
-        if reached(current, goal_position, tol=0.05):
+        if reached(current, goal_position, tol=0.02):
             if data.time - state_start_time > 0.3:
                 next_state = "close_gripper"
 
