@@ -132,14 +132,21 @@ def pick_and_place(
         data.ctrl[gripper_id] = gripper_close
 
         goal_position = np.array([0.5, -0.2, 0.5])
-
         data.ctrl[gripper_id] = gripper_close
-        ee_mat = data.site_xmat[gripper_site_id].reshape(3, 3)
-        rot_err_mat = t_rotation @ ee_mat.T
-        rot_err = np.linalg.norm(rot_err_mat - np.eye(3), ord='fro')
-        print(rot_err)
+
         if reached(current,goal_position,tol = 0.05):
-            next_state = "move"
+            next_state = "rotate_check"
+
+    elif state == "rotate_check":
+        if rotate:
+            c, s = np.cos(np.pi/2), np.sin(np.pi/2)
+            z_90 = np.array([[c, -s, 0], [s, c, 0], [0, 0, 1]])
+            t_rotation @ z_90
+
+            rot_err = np.linalg.norm(data.xmat[gripper_site_id].reshape(3, 3)[:, 2] - np.array([0, 0, 1]))
+            if rot_err < 0.05:
+                next_state = "move"
+        
 
     elif state == "move":
         goal_position = np.array([target_space[0],target_space[1],0.5])
