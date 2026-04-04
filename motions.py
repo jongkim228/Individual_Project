@@ -140,13 +140,24 @@ def pick_and_place(
     elif state == "rotate_check":
         if rotate:
             c, s = np.cos(np.pi/2), np.sin(np.pi/2)
-            z_90 = np.array([[c, -s, 0], [s, c, 0], [0, 0, 1]])
-            t_rotation @ z_90
 
-            rot_err = np.linalg.norm(data.xmat[gripper_site_id].reshape(3, 3)[:, 2] - np.array([0, 0, 1]))
+            if pack_rotation == "z_90":
+                z_90 = np.array([[c, -s, 0], [s, c, 0], [0, 0, 1]])
+                t_rotation = d_rotation @ z_90
+                print("Rotating: Z-Axis 90")
+            elif pack_rotation == "y_90":
+                y_90 = np.array([[c, 0, s], [0, 1, 0], [-s, 0, c]])
+                t_rotation = d_rotation @ y_90
+                print("Rotating: Y-Axis 90")
+
+            ee_z_axis = data.xmat[gripper_site_id].reshape(3, 3)[:, 2]
+            target_z_axis = t_rotation[:, 2]
+            rot_err = np.linalg.norm(ee_z_axis - target_z_axis)
+
             if rot_err < 0.05:
                 next_state = "move"
-        
+        else:
+            next_state = "move"
 
     elif state == "move":
         goal_position = np.array([target_space[0],target_space[1],0.5])
