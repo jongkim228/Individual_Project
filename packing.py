@@ -3,7 +3,7 @@ import csv
 import subprocess
 
 SCALE = 1000
-MARGIN = 0
+MARGIN = 0.001
 
 def box_solution(data, model, boxes, placed_boxes):
     target_space_id = model.body("target_space").id
@@ -84,7 +84,7 @@ def box_solution(data, model, boxes, placed_boxes):
         print(f.read())
 
     origin_x = target_pos[0] - length / 2
-    origin_y = target_pos[1] - width / 2
+    origin_y = target_pos[1] + width / 2
     origin_z = target_pos[2]
 
     results = []
