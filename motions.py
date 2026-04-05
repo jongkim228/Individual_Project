@@ -140,7 +140,6 @@ def pick_and_place(
         goal_position = np.array([fixed_box_xy[0],fixed_box_xy[1],0.5])
 
         if reached(current,goal_position,tol = 0.07):
-            rotate_q_nominal = data.qpos[:7].copy()
             print(rotate_q_nominal)
             next_state = "rotate_check"
 
@@ -215,4 +214,4 @@ def pick_and_place(
         if reached(current,goal_position,tol):
             next_state = "end"
 
-    return next_state, goal_position, captured_q_nominal, rotate_q_nominal, t_rotation
+    return next_state, goal_position, captured_q_nominal, t_rotation

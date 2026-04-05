@@ -41,7 +41,6 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
     next_state = state
     state_start_time = data.time
     
-    rotated_q_nominal = None
 # filter cubes that are in valid space
     t_rotation = d_rotation.copy()
 
@@ -162,7 +161,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                         t_rotation = d_rotation
 
                 
-                next_state, goal_position, captured_q_nominal, rotated_q_nominal, t_rotation = pick_and_place(
+                next_state, goal_position, captured_q_nominal, t_rotation = pick_and_place(
                     fixed_box_xy,
                 model, data, gripper_id, target_box, target_box_id, ee_pos,
                 state, state_start_time,
@@ -221,8 +220,6 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                 ik_params = params.get(state, {"alpha": 0.3, "k_null": 0.05, "damping": 0.05})
                 if state in ["descend_to_cube", "lift"]:
                     target_q_nom = saved_q_nominal
-                elif state == "rotate_check":
-                    target_q_nom = rotated_q_nominal
                 else:
                     target_q_nom = None
                 
