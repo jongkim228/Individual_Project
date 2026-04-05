@@ -14,7 +14,6 @@ from collison import territory_calculation, collision_check
 
 
 with mujoco.viewer.launch_passive(model, data) as viewer:
-
     renderer.enable_depth_rendering()
     depth = renderer.render()
     renderer.disable_depth_rendering()
@@ -161,7 +160,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                         t_rotation = d_rotation
 
                 
-                next_state, goal_position, captured_q_nominal, t_rotation = pick_and_place(
+                next_state, goal_position, captured_q_nominal, t_rotation, pack_rotation = pick_and_place(
                     fixed_box_xy,
                 model, data, gripper_id, target_box, target_box_id, ee_pos,
                 state, state_start_time,
@@ -190,17 +189,21 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             elif next_state == "lift":
                 print("Lift the box")
             elif next_state == "rotate_check":
-                print("Check rotation")
+                if pack_rotation == 2:
+                    p_rotaion = "Vertically"
+                else:
+                    p_rotaion = "Sideways"
+                print(f"Turning The Box {p_rotaion}")
             elif next_state == "move":
-                print("Move to target position")
+                print("Move To Target Position")
             elif next_state == "move_to_drop":
-                print("Move to drop position")
+                print("Move To Drop RPosition")
             elif next_state == "drop":
                 print("Approach to drop")
             elif next_state == "release_gripper":
-                print("Release gripper")
+                print("Release Gripper")
             elif next_state == "move_to_default":
-                print("Move to default")
+                print("Move To Default")
             elif next_state == "move_to_start":
                 print("Move to start")
             elif next_state == "end":
