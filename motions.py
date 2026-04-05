@@ -136,39 +136,45 @@ def pick_and_place(
         data.ctrl[gripper_id] = gripper_close
         goal_position = np.array([fixed_box_xy[0],fixed_box_xy[1],0.5])
 
-
-        if reached(current,goal_position,tol = 0.05):
+        if reached(current,goal_position,tol = 0.07):
             next_state = "rotate_check"
 
     elif state == "rotate_check":
+
         data.ctrl[gripper_id] = gripper_close
-        goal_position = current.copy()
+        goal_position = ee_pos.copy()
+
         pack_rotation = pack_pos["rotation"]
         c, s = np.cos(np.pi/2), np.sin(np.pi/2)
+        
+        if grip_dir == "x_axis":
+            z_90 = np.array(      [[c,-s,0],
+        [s,c,0],
+        [0,0,1]])
+            base_rotation = d_rotation @ z_90
+        else:
+            base_rotation = d_rotation
 
-        if  pack_rotation == 1:
-            z_90 = np.array([[c, -s, 0], [s, c, 0], [0, 0, 1]])
-            t_rotation = d_rotation @ z_90
-            print("Rotating: Z-Axis 90")
-            if data.time - state_start_time > 0.5:
-                next_state = "move_to_center"
+        if pack_rotation == 1:
+            R = np.array([[c, s, 0], [-s, c, 0], [0, 0, 1]])
 
         elif pack_rotation == 2:
-            y_90 = np.array([[c, 0, s], [0, 1, 0], [-s, 0, c]])
-            t_rotation = d_rotation @ y_90
-            print("Rotating: Y-Axis 90")
-            if data.time - state_start_time > 0.5:
-                next_state = "move_to_center"
+            R = np.array([[c, 0, s], [0, 1, 0], [-s, 0, c]])
 
         elif pack_rotation == 3:
-            x_90 = np.array([[1, 0, 0], [0, c, -s], [0, s, c]])
-            t_rotation = d_rotation @ x_90                
-            print("Rotating: X-Axis 90")
-            if data.time - state_start_time > 0.5:
-                next_state = "move_to_center"
-
+            R = np.array([[1, 0, 0], [0, c, -s], [0, s, c]])
         else:
+            R = np.eye(3)
+        
+        t_rotation = base_rotation @ R
+        current_rotation = data.site_xmat[gripper_site_id].reshape(3, 3)
+
+        rot_err = np.linalg.norm(t_rotation - current_rotation, 'fro')
+        print(rot_err)
+
+        if rot_err < 0.07:
             next_state = "move_to_center"
+
 
     elif state == "move_to_center":
         goal_position = np.array([start_space[0], start_space[1], 0.5])
