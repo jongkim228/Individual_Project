@@ -33,6 +33,7 @@ def pick_and_place(
     
     captured_q_nominal = None
     pack_rotation = None
+    rotated = None
 
     box_name = model.body(box_id).name
     geom_id = model.geom(box_name).id
@@ -154,6 +155,7 @@ def pick_and_place(
         
         if grip_dir == "x_axis":
             z_90 = np.array([[c,-s,0], [s,c,0], [0,0,1]])
+            rotated = True
             base_rotation = d_rotation @ z_90
         else:
             base_rotation = d_rotation
@@ -162,10 +164,16 @@ def pick_and_place(
             R = np.array([[c, s, 0], [-s, c, 0], [0, 0, 1]])
 
         elif pack_rotation == 2:
-            R_x = np.array([[1, 0, 0], [0, c, -s], [0, s, c]])
-            R_y = np.array([[c, 0, s], [0, 1, 0], [-s, 0, c]])
-            R_y2 = np.array([[c, 0, s], [0, 1, 0], [-s, 0, c]])
-            R = R_y2 @ R_y @ R_x
+            if rotated:
+                R_x = np.array([[1, 0, 0], [0, c, -s], [0, s, c]])
+                R_y = np.array([[c, 0, s], [0, 1, 0], [-s, 0, c]])
+                R_y2 = np.array([[c, 0, s], [0, 1, 0], [-s, 0, c]])
+                R = R_y2 @ R_y @ R_x
+            else:
+                R_x = np.array([[1, 0, 0], [0, c, -s], [0, s, c]])
+                R_y = np.array([[c, 0, s], [0, 1, 0], [-s, 0, c]])
+                R = R_y @ R_x
+
         elif pack_rotation == 3:
             R = np.array([[1, 0, 0], [0, c, -s], [0, s, c]])
         else:

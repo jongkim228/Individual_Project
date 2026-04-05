@@ -83,7 +83,7 @@ def box_solution(data, model, boxes, placed_boxes):
     with open("solutions.csv", "r") as f:
         print(f.read())
 
-    origin_x = target_pos[0] - length / 2
+    origin_x = target_pos[0] + length / 2
     origin_y = target_pos[1] + width / 2
     origin_z = target_pos[2]
 
@@ -94,18 +94,31 @@ def box_solution(data, model, boxes, placed_boxes):
             if row["TYPE"] == "ITEM":
                 item_id = int(row["ID"])
                 box_size = csv_box[item_id]
+                
+                solver_x = int(row["X"]) / SCALE
+                solver_y = int(row["Y"]) / SCALE
+                solver_z = int(row["Z"]) / SCALE
 
-                lx = int(row["LX"]) / SCALE - MARGIN * 2
-                ly = int(row["LY"]) / SCALE - MARGIN * 2
-                lz = int(row["LZ"]) / SCALE
+                solver_lx = int(row["LX"]) / SCALE - MARGIN * 2
+                solver_ly = int(row["LY"]) / SCALE - MARGIN * 2
+                solver_lz = int(row["LZ"]) / SCALE - MARGIN * 2
+
+                x_local = solver_x + solver_lx / 2
+                y_local = solver_y + solver_ly / 2
+                z_local = solver_z + solver_lz / 2
+
+                world_x = origin_x - x_local
+                world_y = origin_y - y_local
+                world_z = origin_z + z_local
 
                 rotation = int(row.get("ROTATION", 0))
 
+
                 results.append({
                     "id":       item_id,
-                    "x":        origin_x + int(row["X"]) / SCALE + MARGIN + lx / 2,
-                    "y":        origin_y + int(row["Y"]) / SCALE + MARGIN + ly / 2,
-                    "z":        origin_z + int(row["Z"]) / SCALE + box_size[2] / 2,
+                    "x":        world_x,
+                    "y":        world_y,
+                    "z":        world_z,
                     "rotation": rotation
                 })
 
