@@ -153,7 +153,9 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                 valid_geom = model.body_geomadr[target_box_id]
                 target_box = data.geom_xpos[valid_geom].copy()
 
-                if state != "rotate_check":
+                before_rotate_states = ["start", "open_gripper", "move_to_above_cube", 
+                       "descend_to_cube", "close_gripper", "lift"]
+                if state in before_rotate_states:
                     if grip_dir == "x_axis":
                         t_rotation = long_rotated
                     else:
