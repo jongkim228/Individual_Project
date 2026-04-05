@@ -80,6 +80,9 @@ def pick_and_place(
     goal_position = ee_pos.copy()
     current = ee_pos.copy()
 
+    captured_q_nominal = None
+    rotate_q_nominal = None
+
 
     if pack_pos is not None:
         drop_pos = np.array([pack_pos["x"], pack_pos["y"], pack_pos["z"] - 0.03])
@@ -137,20 +140,20 @@ def pick_and_place(
         goal_position = np.array([fixed_box_xy[0],fixed_box_xy[1],0.5])
 
         if reached(current,goal_position,tol = 0.07):
+            rotate_q_nominal = data.qpos[:7].copy()
+            print(rotate_q_nominal)
             next_state = "rotate_check"
 
     elif state == "rotate_check":
-
         data.ctrl[gripper_id] = gripper_close
-        goal_position = ee_pos.copy()
+        goal_position = np.array([start_space[0], start_space[1], 0.6])
+
 
         pack_rotation = pack_pos["rotation"]
         c, s = np.cos(np.pi/2), np.sin(np.pi/2)
         
         if grip_dir == "x_axis":
-            z_90 = np.array(      [[c,-s,0],
-        [s,c,0],
-        [0,0,1]])
+            z_90 = np.array([[c,-s,0], [s,c,0], [0,0,1]])
             base_rotation = d_rotation @ z_90
         else:
             base_rotation = d_rotation
@@ -159,8 +162,9 @@ def pick_and_place(
             R = np.array([[c, s, 0], [-s, c, 0], [0, 0, 1]])
 
         elif pack_rotation == 2:
-            R = np.array([[c, 0, s], [0, 1, 0], [-s, 0, c]])
-
+            R_x = np.array([[1, 0, 0], [0, c, -s], [0, s, c]])
+            R_y = np.array([[c, 0, s], [0, 1, 0], [-s, 0, c]])
+            R = R_y @ R_x
         elif pack_rotation == 3:
             R = np.array([[1, 0, 0], [0, c, -s], [0, s, c]])
         else:
@@ -170,7 +174,6 @@ def pick_and_place(
         current_rotation = data.site_xmat[gripper_site_id].reshape(3, 3)
 
         rot_err = np.linalg.norm(t_rotation - current_rotation, 'fro')
-        print(rot_err)
 
         if rot_err < 0.07:
             next_state = "move_to_center"
@@ -212,4 +215,4 @@ def pick_and_place(
         if reached(current,goal_position,tol):
             next_state = "end"
 
-    return next_state, goal_position, captured_q_nominal, t_rotation
+    return next_state, goal_position, captured_q_nominal, rotate_q_nominal, t_rotation
