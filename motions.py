@@ -1,5 +1,7 @@
 import numpy as np
 import mujoco
+from init import *
+from collision import collision_check
 
 log_file = open("error_log.txt", "w")
 
@@ -87,10 +89,7 @@ def pick_and_place(
 
 
     if pack_pos is not None:
-        drop_pos = np.array([pack_pos["x"], pack_pos["y"], pack_pos["z"] - 0.03])
-        
-    else:
-        drop_pos = target_space + drop
+        drop_pos = np.array([pack_pos["x"], pack_pos["y"], pack_pos["z"] - 0.01])
 
     # Start the task
     if state == "start":
@@ -190,20 +189,49 @@ def pick_and_place(
     elif state == "move":
         goal_position = np.array([target_space[0],target_space[1],0.5])
         if reached(current,goal_position,tol = 0.05):
-            next_state = ""
+            next_state = "collision_check_state"
 
     elif state == "collision_check_state":
+        collision_result, grip_dir = collision_check(box_id,grip_dir,placed_boxes,target_box_solution,placed_solutions)
+        
+        if collision_result == "safe":
+            next_state = "move_to_drop"
+        elif collision_result == "rotate":
+            next_state = "rotate_gripper"
+
+        else: #drop
+            next_state = "move_to_drop"
+
+    elif state == "rotate_gripper":
+            c, s = np.cos(np.pi/2), np.sin(np.pi/2)
+            z_90 = np.array([
+                [c, -s, 0],
+                [s,  c, 0],
+                [0,  0, 1]
+            ])
+
+            current_rotation = data.site_xmat[gripper_site_id].reshape(3, 3)
+            t_rotation = current_rotation @ z_90
+            rot_err = np.linalg.norm(t_rotation - current_rotation, 'fro')
+            
+            if rot_err < 0.05:
+                next_state = "move_to_drop"
 
 
-
+    #Move to above target coordinate for vertical move
     elif state == "move_to_drop":
         goal_position = np.array([drop_pos[0],drop_pos[1],0.3])
         if reached(current,goal_position,tol = 0.05):
-            next_state = "drop"
+            next_state = "release_gripper"
 
-    elif state == "drop":
+    elif state == "move_to_place":
+        goal_position = np.array([drop_pos[0],drop_pos[1],0.3])
+        if reached(current,goal_position,tol = 0.05):
+            next_state = "place"
+
+    elif state == "place":
         goal_position = drop_pos
-        if reached(current, drop_pos, tol=0.05):
+        if reached(current, goal_position, tol=0.05):
             next_state = "release_gripper"
 
     elif state == "release_gripper":

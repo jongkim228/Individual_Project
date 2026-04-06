@@ -10,7 +10,7 @@ from detection import calculate_in_local, objects_in_fov, cube_length_check
 from inverse_kinematics import inverse_kinematics
 from packing import box_solution
 from init import *
-from collision import territory_calculation, collision_check
+from collision import collision_check
 
 
 with mujoco.viewer.launch_passive(model, data) as viewer:
@@ -104,15 +104,12 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                     target_box_id = sorted_boxes.pop(0)
                     fixed_box_xy = data.xpos[target_box_id]
 
+                    print(target_box_id)
+
                     valid_box_geom = model.body_geomadr[target_box_id]
                     #check the box length is over the gripper open range
                     grip_dir = cube_length_check(model,valid_box_geom,gripper_max_open)
-
                     placed_solutions = all_solutions[:len(placed_boxes)]
-
-
-                    #Check Collision
-                    collision_rotate, grip_dir = collision_check(target_box_id,grip_dir,placed_boxes,target_box_solution,placed_solutions)
                     
                     next_state = "start"
                     
@@ -131,10 +128,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
                 #Check the collison and decide how to grab a box
                 grip_dir = cube_length_check(model, end_box_geom, gripper_max_open)
-                placed_solutions = all_solutions[:len(placed_boxes)]
-
-                collision_rotate,grip_dir = collision_check(target_box_id, grip_dir, placed_boxes, target_box_solution,placed_solutions)
-                print(f"collision_result: {collision_rotate}")  
+                placed_solutions = all_solutions[:len(placed_boxes)] 
 
                 next_state = "start"
 

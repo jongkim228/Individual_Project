@@ -126,3 +126,12 @@ collison_rotate = "safe"
 grip_dir = "None"
 
 fixed_box_xy = None
+
+packing_result = []
+all_solutions = []
+placed_solutions = []
+target_box_solution = None
+areas = []
+sorted_boxes = []
+placed_boxes = []
+drop_state = False

@@ -43,7 +43,8 @@ def collision_check(target_box, grip_dir, placed_boxes, box_solution,solutions):
 
     # target box
     geom_id = model.body_geomadr[target_box]
-    box_size = model.geom_size[geom_id]
+    box_size = model.geom_size[geom_id].copy()
+    print(f"geom_id: {geom_id}, box_size: {box_size}")
 
     # bound box with gripper
     bounded_box = bounding_box(box_size, grip_dir)
