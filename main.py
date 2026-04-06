@@ -218,7 +218,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         
 
 
-        for _ in range(10): 
+        for _ in range(5): 
             if state != "close_gripper":
                 ik_params = params.get(state, {"alpha": 0.3, "k_null": 0.05, "damping": 0.05})
                 if state in ["descend_to_cube", "lift"]:

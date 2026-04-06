@@ -185,12 +185,6 @@ def pick_and_place(
         rot_err = np.linalg.norm(t_rotation - current_rotation, 'fro')
 
         if rot_err < 0.07:
-            next_state = "move_to_center"
-
-
-    elif state == "move_to_center":
-        goal_position = np.array([start_space[0], start_space[1], 0.5])
-        if reached(current,goal_position,tol = 0.05):
             next_state = "move"
 
     elif state == "move":

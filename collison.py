@@ -113,10 +113,10 @@ def collision_check(target_box, grip_dir, placed_boxes, box_solution,solutions):
                 if x_overlap and y_overlap and z_overlap:
                     other_collide = True
                     break
-                if other_collide:
-                    return "drop", grip_dir
-                else:
-                    return "rotate", other_dir
+            if other_collide:
+                return "drop", grip_dir
+            else:
+                return "rotate", other_dir
             
         
     return "safe", grip_dir
