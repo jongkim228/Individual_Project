@@ -190,7 +190,10 @@ def pick_and_place(
     elif state == "move":
         goal_position = np.array([target_space[0],target_space[1],0.5])
         if reached(current,goal_position,tol = 0.05):
-            next_state = "move_to_drop"
+            next_state = ""
+
+    elif state == "collision_check_state":
+
 
 
     elif state == "move_to_drop":

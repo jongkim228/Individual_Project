@@ -10,7 +10,7 @@ from detection import calculate_in_local, objects_in_fov, cube_length_check
 from inverse_kinematics import inverse_kinematics
 from packing import box_solution
 from init import *
-from collison import territory_calculation, collision_check
+from collision import territory_calculation, collision_check
 
 
 with mujoco.viewer.launch_passive(model, data) as viewer:
