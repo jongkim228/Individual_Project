@@ -8,6 +8,7 @@ height = 0.07
 max_height = 0.5
 
 def calculate_area_usage(file_name,floor_area):
+    total_area = 0
     with open(file_name,"r") as f:
         reader = csv.DictReader(f)
         for row in reader:
@@ -15,7 +16,7 @@ def calculate_area_usage(file_name,floor_area):
                 lx = int(row["LX"]) / SCALE
                 ly = int(row["LY"]) / SCALE
                 total_area += lx*ly
-        usage = floor_area / total_area
+        usage = total_area / floor_area
     return usage
 
 
@@ -67,6 +68,10 @@ def box_solution(data, model, boxes, placed_boxes):
                 "COPIES": 1
             })
 
+
+    height_local = height
+
+
     while True:
 
         with open("bins.csv", "w", newline="") as f:
@@ -75,7 +80,7 @@ def box_solution(data, model, boxes, placed_boxes):
             writer.writerow({
                 "X": int(length * 1.5 * SCALE),
                 "Y": int(width * 1.2 * SCALE),
-                "Z": int(height * SCALE)
+                "Z": int(height_local * SCALE)
             })
 
         with open("parameters.csv", "w", newline="") as f:
@@ -102,7 +107,11 @@ def box_solution(data, model, boxes, placed_boxes):
             "--use-dichotomic-search", "false"
         ], capture_output=True, text=True)
 
+        area_usage = calculate_area_usage("solutions.csv", floor_area)
+        if area_usage >= 0.8 or height_local >= max_height:
+            break
 
+        height_local += 0.02
         with open("solutions.csv", "r") as f:
             print(f.read())
 
@@ -110,41 +119,40 @@ def box_solution(data, model, boxes, placed_boxes):
         origin_y = target_pos[1] + width / 2
         origin_z = target_pos[2]
 
-        results = []
-        with open("solutions.csv", "r") as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                if row["TYPE"] == "ITEM":
-                    item_id = int(row["ID"])
-                    box_size = csv_box[item_id]
-                    
-                    solver_x = int(row["X"]) / SCALE
-                    solver_y = int(row["Y"]) / SCALE
-                    solver_z = int(row["Z"]) / SCALE
+    results = []
+    with open("solutions.csv", "r") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            if row["TYPE"] == "ITEM":
+                item_id = int(row["ID"])
+                box_size = csv_box[item_id]
+                
+                solver_x = int(row["X"]) / SCALE
+                solver_y = int(row["Y"]) / SCALE
+                solver_z = int(row["Z"]) / SCALE
 
-                    solver_lx = int(row["LX"]) / SCALE - MARGIN * 2
-                    solver_ly = int(row["LY"]) / SCALE - MARGIN * 2
-                    solver_lz = int(row["LZ"]) / SCALE - MARGIN * 2
+                solver_lx = int(row["LX"]) / SCALE - MARGIN * 2
+                solver_ly = int(row["LY"]) / SCALE - MARGIN * 2
+                solver_lz = int(row["LZ"]) / SCALE - MARGIN * 2
 
-                    x_local = solver_x + solver_lx / 2
-                    y_local = solver_y + solver_ly / 2
-                    z_local = solver_z + solver_lz / 2
+                x_local = solver_x + solver_lx / 2
+                y_local = solver_y + solver_ly / 2
+                z_local = solver_z + solver_lz / 2
 
-                    world_x = origin_x - x_local
-                    world_y = origin_y - y_local
-                    world_z = origin_z + z_local
+                world_x = origin_x - x_local
+                world_y = origin_y - y_local
+                world_z = origin_z + z_local
 
-                    rotation = int(row.get("ROTATION", 0))
+                rotation = int(row.get("ROTATION", 0))
 
 
-                    results.append({
-                        "id":       item_id,
-                        "x":        world_x,
-                        "y":        world_y,
-                        "z":        world_z,
-                        "rotation": rotation
-                    })
+                results.append({
+                    "id":       item_id,
+                    "x":        world_x,
+                    "y":        world_y,
+                    "z":        world_z,
+                    "rotation": rotation
+                })
 
-                    area_usage = calculate_area_usage("solution.csv")
 
-        return results
+    return results
