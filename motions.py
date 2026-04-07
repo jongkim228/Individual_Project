@@ -161,7 +161,7 @@ def pick_and_place(
         print(pack_rotation)
 
         if pack_rotation == 1:
-            R = np.array([[c, -s, 0],[s,  c, 0],[0,  0, 1]])
+            R = np.array([[0, 1, 0],[-1,  0, 0],[0,  0, 1]])
 
         elif pack_rotation == 2 or pack_rotation == 4 or pack_rotation == 5:
             print(rotated)

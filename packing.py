@@ -84,6 +84,13 @@ def box_solution(data, model, boxes, placed_boxes):
         "--parameters", "parameters.csv",
         "--certificate", "solutions.csv",
         "--time-limit", "10",
+        "--objective", "BinPacking",
+        "--optimization-mode", "NotAnytimeSequential",
+        "--use-sequential-single-knapsack", "true",
+        "--use-tree-search", "false",
+        "--use-sequential-value-correction", "false",
+        "--use-column-generation", "false",
+        "--use-dichotomic-search", "false"
     ], capture_output=True, text=True)
     print(result.stdout)
     print(result.stderr)
