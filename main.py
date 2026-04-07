@@ -195,7 +195,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             elif next_state == "move":
                 print("Move To Target Position")
             elif next_state == "move_to_drop":
-                print("Move To Drop RPosition")
+                print("Move To Drop Position")
             elif next_state == "drop":
                 print("Approach to drop")
             elif next_state == "release_gripper":

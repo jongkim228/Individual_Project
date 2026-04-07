@@ -59,7 +59,7 @@ def pick_and_place(
     above_box_pos = target_box_pos + above
 
 
-    close = np.array([0, 0, - z_value])
+    close = np.array([0, 0, - z_value +0.01])
 
 
     drop = np.array([0,0,0.01])
@@ -231,7 +231,7 @@ def pick_and_place(
 
     elif state == "place":
         goal_position = place_pos
-        if reached(current, goal_position, tol=0.05):
+        if reached(current, goal_position, tol=0.03):
             next_state = "release_gripper"
 
     elif state == "release_gripper":

@@ -21,14 +21,14 @@ params = {
     "close_gripper":    {"alpha": 0.3,  "k_null": 0, "damping": 0.05},
     "lift":             {"alpha": 0.1, "k_null": 0.15, "damping": 0.01, "rot_weight": 5},
     "move":             {"alpha": 0.3,  "k_null": 0.15, "damping": 0.01, "rot_weight": 5},
-    "drop":             {"alpha": 0.2,  "k_null": 0.15, "damping": 0.01, "rot_weight": 5},
+    "drop":             {"alpha": 0.1,  "k_null": 0.15, "damping": 0.01, "rot_weight": 5},
     "rotate_check":     {"alpha": 0.1, "k_null": 0.3, "damping": 0.01, "rot_weight": 5},
     "move_to_center":   {"alpha": 0.3,  "k_null": 0.15, "damping": 0.01, "rot_weight": 5},
     "release_gripper":  {"alpha": 0.3,  "k_null": 0, "damping": 0.05},
     "move_to_default":  {"alpha": 0.3,  "k_null": 0.15, "damping": 0.05},
     "move_to_start":    {"alpha": 0.7,  "k_null": 0.15, "damping": 0.05},
     "end":              {"alpha": 0.7,  "k_null": 0.15, "damping": 0.05},
-    "move_to_above_cube":{"alpha": 0.3,  "k_null": 0, "damping": 0.05},
+    "move_to_above_cube":{"alpha": 0.1,  "k_null": 0, "damping": 0.05},
 }
 
 # space

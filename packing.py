@@ -4,6 +4,20 @@ import subprocess
 
 SCALE = 1000
 MARGIN = 0
+height = 0.07
+max_height = 0.5
+
+def calculate_area_usage(file_name,floor_area):
+    with open(file_name,"r") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            if row["TYPE"] == "ITEM":
+                lx = int(row["LX"]) / SCALE
+                ly = int(row["LY"]) / SCALE
+                total_area += lx*ly
+        usage = floor_area / total_area
+    return usage
+
 
 def box_solution(data, model, boxes, placed_boxes):
     target_space_id = model.body("target_space").id
@@ -29,11 +43,6 @@ def box_solution(data, model, boxes, placed_boxes):
 
     area_usage = total_area / floor_area
 
-    if area_usage > 0.8:
-        height = 0.5
-    else:
-        height = 0.15
-
     csv_box = []
     for body_id in boxes:
         geom_id = model.body_geomadr[body_id]
@@ -57,84 +66,85 @@ def box_solution(data, model, boxes, placed_boxes):
                 "ROTATIONS": rotations,
                 "COPIES": 1
             })
-    total_length = sum(box[0] for box in csv_box)
-    max_width = max(box[1] for box in csv_box)
 
-    with open("bins.csv", "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=["X", "Y", "Z"])
-        writer.writeheader()
-        writer.writerow({
-            "X": int(length * 1.5 * SCALE),
-            "Y": int(width * 1.2 * SCALE),
-            "Z": int(height * SCALE)
-        })
+    while True:
 
-    with open("parameters.csv", "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=["NAME", "VALUE"])
-        writer.writeheader()
-        writer.writerow({
-            "NAME": "objective", "VALUE": "bin-packing"
-        })
+        with open("bins.csv", "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=["X", "Y", "Z"])
+            writer.writeheader()
+            writer.writerow({
+                "X": int(length * 1.5 * SCALE),
+                "Y": int(width * 1.2 * SCALE),
+                "Z": int(height * SCALE)
+            })
 
-    result = subprocess.run([
-        "./packingsolver/build/src/box/packingsolver_box",
-        "--items", "items.csv",
-        "--verbosity-level", "0",
-        "--bins", "bins.csv",
-        "--parameters", "parameters.csv",
-        "--certificate", "solutions.csv",
-        "--time-limit", "10",
-        "--objective", "BinPacking",
-        "--optimization-mode", "NotAnytimeSequential",
-        "--use-sequential-single-knapsack", "true",
-        "--use-tree-search", "false",
-        "--use-sequential-value-correction", "false",
-        "--use-column-generation", "false",
-        "--use-dichotomic-search", "false"
-    ], capture_output=True, text=True)
-    print(result.stdout)
-    print(result.stderr)
+        with open("parameters.csv", "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=["NAME", "VALUE"])
+            writer.writeheader()
+            writer.writerow({
+                "NAME": "objective", "VALUE": "bin-packing"
+            })
 
-    with open("solutions.csv", "r") as f:
-        print(f.read())
-
-    origin_x = target_pos[0] + length / 2
-    origin_y = target_pos[1] + width / 2
-    origin_z = target_pos[2]
-
-    results = []
-    with open("solutions.csv", "r") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            if row["TYPE"] == "ITEM":
-                item_id = int(row["ID"])
-                box_size = csv_box[item_id]
-                
-                solver_x = int(row["X"]) / SCALE
-                solver_y = int(row["Y"]) / SCALE
-                solver_z = int(row["Z"]) / SCALE
-
-                solver_lx = int(row["LX"]) / SCALE - MARGIN * 2
-                solver_ly = int(row["LY"]) / SCALE - MARGIN * 2
-                solver_lz = int(row["LZ"]) / SCALE - MARGIN * 2
-
-                x_local = solver_x + solver_lx / 2
-                y_local = solver_y + solver_ly / 2
-                z_local = solver_z + solver_lz / 2
-
-                world_x = origin_x - x_local
-                world_y = origin_y - y_local
-                world_z = origin_z + z_local
-
-                rotation = int(row.get("ROTATION", 0))
+        result = subprocess.run([
+            "./packingsolver/build/src/box/packingsolver_box",
+            "--items", "items.csv",
+            "--verbosity-level", "0",
+            "--bins", "bins.csv",
+            "--parameters", "parameters.csv",
+            "--certificate", "solutions.csv",
+            "--time-limit", "10",
+            "--objective", "BinPacking",
+            "--optimization-mode", "NotAnytimeSequential",
+            "--use-sequential-single-knapsack", "true",
+            "--use-tree-search", "false",
+            "--use-sequential-value-correction", "false",
+            "--use-column-generation", "false",
+            "--use-dichotomic-search", "false"
+        ], capture_output=True, text=True)
 
 
-                results.append({
-                    "id":       item_id,
-                    "x":        world_x,
-                    "y":        world_y,
-                    "z":        world_z,
-                    "rotation": rotation
-                })
+        with open("solutions.csv", "r") as f:
+            print(f.read())
 
-    return results
+        origin_x = target_pos[0] + length / 2
+        origin_y = target_pos[1] + width / 2
+        origin_z = target_pos[2]
+
+        results = []
+        with open("solutions.csv", "r") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if row["TYPE"] == "ITEM":
+                    item_id = int(row["ID"])
+                    box_size = csv_box[item_id]
+                    
+                    solver_x = int(row["X"]) / SCALE
+                    solver_y = int(row["Y"]) / SCALE
+                    solver_z = int(row["Z"]) / SCALE
+
+                    solver_lx = int(row["LX"]) / SCALE - MARGIN * 2
+                    solver_ly = int(row["LY"]) / SCALE - MARGIN * 2
+                    solver_lz = int(row["LZ"]) / SCALE - MARGIN * 2
+
+                    x_local = solver_x + solver_lx / 2
+                    y_local = solver_y + solver_ly / 2
+                    z_local = solver_z + solver_lz / 2
+
+                    world_x = origin_x - x_local
+                    world_y = origin_y - y_local
+                    world_z = origin_z + z_local
+
+                    rotation = int(row.get("ROTATION", 0))
+
+
+                    results.append({
+                        "id":       item_id,
+                        "x":        world_x,
+                        "y":        world_y,
+                        "z":        world_z,
+                        "rotation": rotation
+                    })
+
+                    area_usage = calculate_area_usage("solution.csv")
+
+        return results
