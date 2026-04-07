@@ -3,7 +3,7 @@ import csv
 import subprocess
 
 SCALE = 1000
-MARGIN = 0.001
+MARGIN = 0
 
 def box_solution(data, model, boxes, placed_boxes):
     target_space_id = model.body("target_space").id
@@ -32,7 +32,7 @@ def box_solution(data, model, boxes, placed_boxes):
     if area_usage > 0.8:
         height = 0.5
     else:
-        height = 0.12
+        height = 0.15
 
     csv_box = []
     for body_id in boxes:
@@ -44,11 +44,17 @@ def box_solution(data, model, boxes, placed_boxes):
         writer = csv.DictWriter(f, fieldnames=["X", "Y", "Z", "ROTATIONS", "COPIES"])
         writer.writeheader()
         for x, y, z in csv_box:
+
+            if x <= length and y <= width:
+                rotations = 1
+            else:
+                rotations = 63
+                
             writer.writerow({
                 "X": int((x + MARGIN * 2) * SCALE),
                 "Y": int((y + MARGIN * 2) * SCALE),
                 "Z": int(z * SCALE),
-                "ROTATIONS": 6,
+                "ROTATIONS": rotations,
                 "COPIES": 1
             })
 

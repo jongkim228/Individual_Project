@@ -158,16 +158,16 @@ def pick_and_place(
             base_rotation = d_rotation @ z_90
         else:
             base_rotation = d_rotation
+        print(pack_rotation)
 
         if pack_rotation == 1:
-            R = np.array([[c, s, 0], [-s, c, 0], [0, 0, 1]])
+            R = np.array([[c, -s, 0],[s,  c, 0],[0,  0, 1]])
 
-        elif pack_rotation == 2:
+        elif pack_rotation == 2 or pack_rotation == 4 or pack_rotation == 5:
+            print(rotated)
             if rotated:
-                R_x = np.array([[1, 0, 0], [0, c, -s], [0, s, c]])
-                R_y = np.array([[c, 0, s], [0, 1, 0], [-s, 0, c]])
-                R_y2 = np.array([[c, 0, s], [0, 1, 0], [-s, 0, c]])
-                R = R_y2 @ R_y @ R_x
+                R = np.array([[0, 0, -1], [0, 1, 0], [1, 0, 0]])
+                
             else:
                 R_x = np.array([[1, 0, 0], [0, c, -s], [0, s, c]])
                 R_y = np.array([[c, 0, s], [0, 1, 0], [-s, 0, c]])
@@ -215,7 +215,7 @@ def pick_and_place(
             rot_err = np.linalg.norm(t_rotation - current_rotation, 'fro')
             
             if rot_err < 0.05:
-                next_state = "move_to_drop"
+                next_state = "move_to_place"
 
 
     #Move to above target coordinate for vertical move
