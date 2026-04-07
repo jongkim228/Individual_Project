@@ -89,7 +89,7 @@ def pick_and_place(
 
 
     if pack_pos is not None:
-        drop_pos = np.array([pack_pos["x"], pack_pos["y"], pack_pos["z"] - 0.01])
+        place_pos = np.array([pack_pos["x"], pack_pos["y"], pack_pos["z"] - 0.01])
 
     # Start the task
     if state == "start":
@@ -195,7 +195,7 @@ def pick_and_place(
         collision_result, grip_dir = collision_check(box_id,grip_dir,placed_boxes,target_box_solution,placed_solutions)
         
         if collision_result == "safe":
-            next_state = "move_to_drop"
+            next_state = "move_to_place"
         elif collision_result == "rotate":
             next_state = "rotate_gripper"
 
@@ -220,17 +220,17 @@ def pick_and_place(
 
     #Move to above target coordinate for vertical move
     elif state == "move_to_drop":
-        goal_position = np.array([drop_pos[0],drop_pos[1],0.3])
+        goal_position = np.array([place_pos[0],place_pos[1],0.3])
         if reached(current,goal_position,tol = 0.05):
             next_state = "release_gripper"
 
     elif state == "move_to_place":
-        goal_position = np.array([drop_pos[0],drop_pos[1],0.3])
+        goal_position = np.array([place_pos[0],place_pos[1],0.3])
         if reached(current,goal_position,tol = 0.05):
             next_state = "place"
 
     elif state == "place":
-        goal_position = drop_pos
+        goal_position = place_pos
         if reached(current, goal_position, tol=0.05):
             next_state = "release_gripper"
 
@@ -240,7 +240,7 @@ def pick_and_place(
             next_state = "move_to_default"
 
     elif state == "move_to_default":
-            goal_position = np.array([drop_pos[0], drop_pos[1], 0.5])
+            goal_position = np.array([place_pos[0], place_pos[1], 0.5])
             if reached(current,goal_position,tol):
                 next_state = "move_to_start"
 

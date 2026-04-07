@@ -185,9 +185,13 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             elif next_state == "rotate_check":
                 if pack_rotation == 2:
                     p_rotaion = "Vertically"
+                    print(f"Turning The Box {p_rotaion}")
+                elif pack_rotation == 0:
+                    print("Not Using Rotations")
                 else:
                     p_rotaion = "Sideways"
-                print(f"Turning The Box {p_rotaion}")
+                    print(f"Turning The Box {p_rotaion}")
+
             elif next_state == "move":
                 print("Move To Target Position")
             elif next_state == "move_to_drop":

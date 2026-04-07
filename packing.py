@@ -49,7 +49,7 @@ def box_solution(data, model, boxes, placed_boxes):
                 rotations = 1
             else:
                 rotations = 63
-                
+
             writer.writerow({
                 "X": int((x + MARGIN * 2) * SCALE),
                 "Y": int((y + MARGIN * 2) * SCALE),
@@ -57,13 +57,15 @@ def box_solution(data, model, boxes, placed_boxes):
                 "ROTATIONS": rotations,
                 "COPIES": 1
             })
+    total_length = sum(box[0] for box in csv_box)
+    max_width = max(box[1] for box in csv_box)
 
     with open("bins.csv", "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=["X", "Y", "Z"])
         writer.writeheader()
         writer.writerow({
-            "X": int(length * SCALE),
-            "Y": int(width * SCALE),
+            "X": int(length * 1.5 * SCALE),
+            "Y": int(width * 1.2 * SCALE),
             "Z": int(height * SCALE)
         })
 
