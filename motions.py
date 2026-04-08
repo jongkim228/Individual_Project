@@ -259,4 +259,4 @@ def pick_and_place(
         if reached(current,goal_position,tol):
             next_state = "end"
 
-    return next_state, goal_position, captured_q_nominal, t_rotation, pack_rotation
+    return next_state, goal_position, captured_q_nominal, t_rotation, pack_rotation, fixed_box_xy

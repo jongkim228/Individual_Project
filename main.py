@@ -147,6 +147,9 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                 valid_geom = model.body_geomadr[target_box_id]
                 target_box = data.geom_xpos[valid_geom].copy()
 
+                if state in ["start", "open_gripper", "move_to_above_cube", "descend_to_cube"]:
+                    fixed_box_xy = data.xpos[target_box_id][:2].copy()
+
                 before_rotate_states = ["start", "open_gripper", "move_to_above_cube", 
                        "descend_to_cube", "close_gripper", "lift"]
                 if state in before_rotate_states:
@@ -155,7 +158,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                     else:
                         t_rotation = d_rotation
 
-                next_state, goal_position, captured_q_nominal, t_rotation, pack_rotation = pick_and_place(
+                next_state, goal_position, captured_q_nominal, t_rotation, pack_rotation, fixed_box_xy = pick_and_place(
                 fixed_box_xy,
                 model, data, gripper_id, target_box, target_box_id, ee_pos,
                 state, state_start_time,
@@ -222,7 +225,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         
 
 
-        for _ in range(3): 
+        for _ in range(20): 
             if state != "close_gripper":
                 ik_params = params.get(state, {"alpha": 0.3, "k_null": 0.05, "damping": 0.05})
                 if state in ["descend_to_cube", "lift"]:
