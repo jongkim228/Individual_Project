@@ -153,16 +153,19 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                     else:
                         t_rotation = d_rotation
 
-                
                 next_state, goal_position, captured_q_nominal, t_rotation, pack_rotation = pick_and_place(
-                    fixed_box_xy,
+                fixed_box_xy,
                 model, data, gripper_id, target_box, target_box_id, ee_pos,
                 state, state_start_time,
                 d_rotation,
                 pack_pos=target_box_solution,
                 grip_dir=grip_dir,
-                gripper_site_id=gripper_site_id,  
-                t_rotation=t_rotation)
+                gripper_site_id=gripper_site_id,
+                t_rotation=t_rotation,
+                placed_boxes=placed_boxes,
+                placed_solutions=placed_solutions,
+                target_box_solution=target_box_solution,
+            )
 
                 if captured_q_nominal is not None:
                     saved_q_nominal = captured_q_nominal

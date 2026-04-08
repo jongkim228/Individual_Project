@@ -31,6 +31,9 @@ def pick_and_place(
     gripper_site_id=None, 
     t_rotation=None,        
     pack_pos=None,
+    placed_boxes = None,
+    placed_solutions=None,
+    target_box_solution = None,
     tol=0.04):
     
     captured_q_nominal = None
@@ -193,12 +196,14 @@ def pick_and_place(
 
     elif state == "collision_check_state":
         collision_result, grip_dir = collision_check(box_id,grip_dir,placed_boxes,target_box_solution,placed_solutions)
-        
+        print(f"[ROTATION CHECK]{grip_dir}")
+        print(f"COLLISION CHECK]{collision_result}")
         if collision_result == "safe":
             next_state = "move_to_place"
         elif collision_result == "rotate":
+            print(f"[ROTATION CHECK]{grip_dir}")
+            print("rotate!")
             next_state = "rotate_gripper"
-
         else: #drop
             next_state = "move_to_drop"
 
@@ -210,11 +215,15 @@ def pick_and_place(
                 [0,  0, 1]
             ])
 
+            if t_rotation is None or np.allclose(t_rotation, d_rotation, atol=0.2):
+                current = data.site_xmat[gripper_site_id].reshape(3, 3).copy()
+                t_rotation = current @ z_90
+
             current_rotation = data.site_xmat[gripper_site_id].reshape(3, 3)
-            t_rotation = current_rotation @ z_90
             rot_err = np.linalg.norm(t_rotation - current_rotation, 'fro')
             
             if rot_err < 0.05:
+                grip_dir = "y_axis" if grip_dir == "x_axis" else "x_axis"   
                 next_state = "move_to_place"
 
 

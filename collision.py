@@ -14,7 +14,7 @@ def bounding_box(box_size, grip_dir):
 # placed boxes coordinates
 def territory_calculation(placed_boxes, solutions):
     placed_boxes_territory.clear()
-    offset = np.zeros(3)
+    offsets = []
 
     for box_id, solution in zip(placed_boxes,solutions):
         geom_id = model.body_geomadr[box_id]
@@ -23,6 +23,7 @@ def territory_calculation(placed_boxes, solutions):
 
         solver_pos = np.array([solution["x"], solution["y"], solution["z"]])
         offset = box_pos - solver_pos
+        offsets.append(offset)
 
         max_pos = box_pos + box_size
         min_pos = box_pos - box_size
@@ -33,30 +34,38 @@ def territory_calculation(placed_boxes, solutions):
             "max": max_pos
         })
 
-    return placed_boxes_territory, offset
+    return placed_boxes_territory, offsets
 
 
 def collision_check(target_box, grip_dir, placed_boxes, box_solution,solutions):
     collide = False
     # calculation for placed boxes
-    territory, offset = territory_calculation(placed_boxes,solutions)
+    territory, offsets = territory_calculation(placed_boxes,solutions)
 
     # target box
     geom_id = model.body_geomadr[target_box]
     box_size = model.geom_size[geom_id].copy()
-    print(f"geom_id: {geom_id}, box_size: {box_size}")
 
     # bound box with gripper
     bounded_box = bounding_box(box_size, grip_dir)
-    print(f"bounded_box: {bounded_box}")
+
+    print("territory len",len(territory))
+
+    if len(territory) == 0:
+        return "safe", grip_dir
 
     # if box is placed on target place
+
     if len(territory) > 0:
-        solution_center = np.array([box_solution["x"], box_solution["y"], box_solution["z"]]) + offset
+
+        avg_offset = np.mean(offsets, axis = 0)
+
+        solution_center = np.array([box_solution["x"], box_solution["y"], box_solution["z"]])
+        target_center = solution_center + avg_offset
 
         # calculation for target box with solution
-        bound_max = solution_center + bounded_box
-        bound_min = solution_center - bounded_box
+        bound_max = target_center + bounded_box
+        bound_min = target_center - bounded_box
 
         print(f"bounded_box: {bounded_box}")
         print(f"bound_min: {bound_min}")
@@ -92,8 +101,8 @@ def collision_check(target_box, grip_dir, placed_boxes, box_solution,solutions):
                 other_dir = "x_axis"   
 
             new_bounded = bounding_box(box_size, other_dir)
-            bound_max = solution_center + new_bounded
-            bound_min = solution_center - new_bounded
+            bound_max = target_center + new_bounded
+            bound_min = target_center - new_bounded
 
             other_collide = False
 

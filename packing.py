@@ -3,7 +3,7 @@ import csv
 import subprocess
 
 SCALE = 1000
-MARGIN = 0
+MARGIN = 0.001
 height = 0.07
 max_height = 0.5
 
