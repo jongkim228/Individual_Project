@@ -34,6 +34,7 @@ def pick_and_place(
     placed_boxes = None,
     placed_solutions=None,
     target_box_solution = None,
+    default_q_nominal = None,
     tol=0.04):
     
     captured_q_nominal = None
@@ -107,7 +108,7 @@ def pick_and_place(
         data.ctrl[gripper_id] = gripper_open
 
         if data.time - state_start_time > 0.2:
-            captured_q_nominal = data.qpos[:7].copy()
+            captured_q_nominal = default_q_nominal
             next_state = "move_to_above_cube"
 
     elif state == "move_to_above_cube":

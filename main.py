@@ -72,6 +72,8 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             goal_position = default_position
 
             if at_default_position and not initialized:
+                if default_q_nominal is None:
+                    default_q_nominal = data.qpos[:7].copy()
                 for scene_box in scene_boxes:
                     box_geom_id = model.body_geomadr[scene_box]
                     local_value = calculate_in_local(model, data, camera_name, box_geom_id)
@@ -165,6 +167,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                 placed_boxes=placed_boxes,
                 placed_solutions=placed_solutions,
                 target_box_solution=target_box_solution,
+                default_q_nominal = default_q_nominal
             )
 
                 if captured_q_nominal is not None:

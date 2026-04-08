@@ -135,3 +135,5 @@ areas = []
 sorted_boxes = []
 placed_boxes = []
 drop_state = False
+
+default_q_nominal = None

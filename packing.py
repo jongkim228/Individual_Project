@@ -154,5 +154,6 @@ def box_solution(data, model, boxes, placed_boxes):
                     "rotation": rotation
                 })
 
-
+    results.sort(key=lambda r: r["z"])
+    
     return results
