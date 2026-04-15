@@ -14,21 +14,22 @@ arm_actuator_ids = np.array([model.actuator(name).id for name in arm_actuator_na
 gripper_id = model.actuator("actuator8").id
 
 params = {
-    "wait":             {"alpha": 0.9,  "k_null": 0.3, "damping": 0.05},
-    "start":            {"alpha": 0.9,  "k_null": 0, "damping": 0.05},
-    "open_gripper":     {"alpha": 0.9,  "k_null": 0, "damping": 0.05},
-    "descend_to_cube":  {"alpha": 0.3,  "k_null": 0.15, "damping": 0.01, "rot_weight": 5},
-    "close_gripper":    {"alpha": 0.3,  "k_null": 0, "damping": 0.05},
-    "lift":             {"alpha": 0.1, "k_null": 0.15, "damping": 0.01, "rot_weight": 5},
-    "move":             {"alpha": 0.3,  "k_null": 0.15, "damping": 0.01, "rot_weight": 5},
-    "drop":             {"alpha": 0.1,  "k_null": 0.15, "damping": 0.01, "rot_weight": 5},
-    "rotate_check":     {"alpha": 0.1, "k_null": 0.3, "damping": 0.01, "rot_weight": 5},
+    "wait":             {"alpha": 0.9,  "k_null": 0.3, "damping": 0.2},
+    "start":            {"alpha": 0.9,  "k_null": 0, "damping": 0.2},
+    "open_gripper":     {"alpha": 0.9,  "k_null": 0, "damping": 0.2},
+    "descend_to_cube":  {"alpha": 0.3,  "k_null": 0.15, "damping": 0.15, "rot_weight": 5},
+    "close_gripper":    {"alpha": 0.3,  "k_null": 0, "damping": 0.2},
+    "lift":             {"alpha": 0.2, "k_null": 0.15, "damping": 0.01, "rot_weight": 5},
+    "move":             {"alpha": 0.2,  "k_null": 0.15, "damping": 0.01, "rot_weight": 5},
+    "rotate_check":     {"alpha": 0.3, "k_null": 0.3, "damping": 0.01, "rot_weight": 5},
     "move_to_center":   {"alpha": 0.3,  "k_null": 0.15, "damping": 0.01, "rot_weight": 5},
     "release_gripper":  {"alpha": 0.3,  "k_null": 0, "damping": 0.05},
     "move_to_default":  {"alpha": 0.3,  "k_null": 0.15, "damping": 0.05},
     "move_to_start":    {"alpha": 0.7,  "k_null": 0.15, "damping": 0.05},
     "end":              {"alpha": 0.7,  "k_null": 0.15, "damping": 0.05},
-    "move_to_above_cube":{"alpha": 0.1,  "k_null": 0, "damping": 0.05},
+    "place":            {"alpha": 0.2,  "k_null": 0.15, "damping": 0.01},
+    "collision_check_state":{"alpha": 0.2,  "k_null": 0.15, "damping": 0.05},
+    "rotate_gripper":   {"alpha": 0.3,  "k_null": 0, "damping": 0.05,"rot_weight": 5},
 }
 
 # space

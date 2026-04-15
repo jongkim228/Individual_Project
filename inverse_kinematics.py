@@ -16,7 +16,7 @@ def inverse_kinematics(model, data, gripper_site_id, t_position, t_rotation,
     weights_inverse = np.diag(1 / actuator_weights)
     eomg = 0.001
     ev = 0.0001
-    max_iter = 3
+    max_iter = 2
 
     ee_position = data.site_xpos[gripper_site_id].copy()
     ee_rotation = data.site_xmat[gripper_site_id].reshape(3, 3).copy()
@@ -81,7 +81,7 @@ def inverse_kinematics(model, data, gripper_site_id, t_position, t_rotation,
         J = np.vstack([jac_pos, jac_rot])[:, :7]
 
         j_pse_inverse = weights_inverse @ J.T @ np.linalg.solve(
-            J @ weights_inverse @ J.T + damping * np.eye(6), np.eye(6))
+            J @ weights_inverse @ J.T + (damping**2) * np.eye(6), np.eye(6))
 
         N = np.eye(7) - j_pse_inverse @ J
         dq0 = q_nominal - q_virtual

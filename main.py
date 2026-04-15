@@ -89,7 +89,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                     geom_id = model.body_geomadr[i]
                     size = model.geom_size[geom_id].copy()
                                             
-                    areas.append(max(size) * 100)
+                    areas.append(size[0] * size[1] * size[2])
 
                 sorted_boxes = sorted(valid_boxes,key=lambda i: dict(zip(valid_boxes, areas))[i],reverse=True)
                 initialized = True
@@ -218,14 +218,14 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
         state = next_state
 
-        if state == "close_gripper":
-            pass
+        if state in ["lift", "descend_to_cube", "drop", "place"]:
+            t_position = smooth_move(t_position, goal_position, speed=0.07)  
         else:
-            t_position = smooth_move(t_position, goal_position, speed=0.05)
+            t_position = smooth_move(t_position, goal_position, speed=0.1)
         
 
 
-        for _ in range(20): 
+        for _ in range(10): 
             if state != "close_gripper":
                 ik_params = params.get(state, {"alpha": 0.3, "k_null": 0.05, "damping": 0.05})
                 if state in ["descend_to_cube", "lift"]:

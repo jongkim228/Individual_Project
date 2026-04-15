@@ -3,7 +3,7 @@ import csv
 import subprocess
 
 SCALE = 1000
-MARGIN = 0.001
+MARGIN = 0.005
 height = 0.07
 max_height = 0.5
 
@@ -72,14 +72,19 @@ def box_solution(data, model, boxes, placed_boxes):
     height_local = height
 
 
+    origin_x = target_pos[0] + length / 2
+    origin_y = target_pos[1] + width / 2
+    origin_z = target_pos[2]
+
+
     while True:
 
         with open("bins.csv", "w", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=["X", "Y", "Z"])
             writer.writeheader()
             writer.writerow({
-                "X": int(length * 1.5 * SCALE),
-                "Y": int(width * 1.2 * SCALE),
+                "X": int(length * SCALE),
+                "Y": int(width * SCALE),
                 "Z": int(height_local * SCALE)
             })
 
@@ -114,10 +119,6 @@ def box_solution(data, model, boxes, placed_boxes):
         height_local += 0.02
         with open("solutions.csv", "r") as f:
             print(f.read())
-
-        origin_x = target_pos[0] + length / 2
-        origin_y = target_pos[1] + width / 2
-        origin_z = target_pos[2]
 
     results = []
     with open("solutions.csv", "r") as f:
@@ -155,5 +156,5 @@ def box_solution(data, model, boxes, placed_boxes):
                 })
 
     results.sort(key=lambda r: r["z"])
-    
+
     return results

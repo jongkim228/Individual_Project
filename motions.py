@@ -65,8 +65,6 @@ def pick_and_place(
 
     close = np.array([0, 0, - z_value +0.01])
 
-
-    drop = np.array([0,0,0.01])
     pick_pos = target_box_pos + close
 
 
@@ -80,9 +78,6 @@ def pick_and_place(
 
     #default postion when gripper picked up the box
     lift_pos = start_space + np.array([0, 0, 0.5])
-
-    #Before drop
-    above_target = target_space + above
 
     next_state = state
     goal_position = ee_pos.copy()
@@ -116,7 +111,7 @@ def pick_and_place(
         target_box_pos[1], 
         0.5 ])
         
-        if reached(current, goal_position, tol=0.03):
+        if reached(current, goal_position, tol=0.05):
             if data.time - state_start_time > 0.3:
                 next_state = "descend_to_cube"
 
@@ -192,7 +187,7 @@ def pick_and_place(
 
     elif state == "move":
         goal_position = np.array([target_space[0],target_space[1],0.5])
-        if reached(current,goal_position,tol = 0.05):
+        if reached(current,goal_position,tol = 0.07):
             next_state = "collision_check_state"
 
     elif state == "collision_check_state":
@@ -231,17 +226,17 @@ def pick_and_place(
     #Move to above target coordinate for vertical move
     elif state == "move_to_drop":
         goal_position = np.array([place_pos[0],place_pos[1],0.3])
-        if reached(current,goal_position,tol = 0.05):
+        if reached(current,goal_position,tol = 0.03):
             next_state = "release_gripper"
 
     elif state == "move_to_place":
         goal_position = np.array([place_pos[0],place_pos[1],0.3])
-        if reached(current,goal_position,tol = 0.05):
+        if reached(current,goal_position,tol = 0.02):
             next_state = "place"
 
     elif state == "place":
         goal_position = place_pos
-        if reached(current, goal_position, tol=0.03):
+        if reached(current, goal_position, tol=0.02):
             next_state = "release_gripper"
 
     elif state == "release_gripper":
