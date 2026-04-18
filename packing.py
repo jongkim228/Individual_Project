@@ -69,8 +69,8 @@ def box_solution(data, model, boxes, placed_boxes):
             })
 
 
-    height_local = height
-
+    layer_height = max(max(box) for box in csv_box)
+    height_local = layer_height
 
     origin_x = target_pos[0] + length / 2
     origin_y = target_pos[1] + width / 2
@@ -116,7 +116,7 @@ def box_solution(data, model, boxes, placed_boxes):
         if area_usage >= 0.8 or height_local >= max_height:
             break
 
-        height_local += 0.02
+        height_local += max(box[2] for box in csv_box)
         with open("solutions.csv", "r") as f:
             print(f.read())
 
@@ -156,5 +156,4 @@ def box_solution(data, model, boxes, placed_boxes):
                 })
 
     results.sort(key=lambda r: r["z"])
-
     return results

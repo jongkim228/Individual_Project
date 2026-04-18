@@ -85,15 +85,9 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
                 print(f"{num_box} boxes have detected")
 
-                for i in valid_boxes:
-                    geom_id = model.body_geomadr[i]
-                    size = model.geom_size[geom_id].copy()
-                                            
-                    areas.append(size[0] * size[1] * size[2])
 
-                sorted_boxes = sorted(valid_boxes,key=lambda i: dict(zip(valid_boxes, areas))[i],reverse=True)
+                sorted_boxes = valid_boxes.copy()
                 initialized = True
-
 
                 #Box on valid space
                 if len(sorted_boxes) > 0:
@@ -119,7 +113,10 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         elif state == "end":
             #After putting box on the target space
             #put the box id in to placed_boxes list
-            placed_boxes.append(target_box_id)            
+            placed_boxes.append(target_box_id)
+            geom_id = model.body_geomadr[target_box_id]
+            actual_pos = data.geom_xpos[geom_id].copy()
+            placement_log.append((target_box_id, target_box_solution, actual_pos))    
 
             # if there are more boxes
             if len(sorted_boxes) > 0:
@@ -200,13 +197,18 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                 else:
                     p_rotaion = "Sideways"
                     print(f"Turning The Box {p_rotaion}")
-
             elif next_state == "move":
                 print("Move To Target Position")
+            elif next_state == "collision_check_state":
+                print("Checking Collision")
+            elif next_state == "rotate_gripper":
+                print("Rotating Gripper")
+            elif next_state == "move_to_place":
+                print("Move To Place Position")
+            elif next_state == "place":
+                print("Placing Box")
             elif next_state == "move_to_drop":
                 print("Move To Drop Position")
-            elif next_state == "drop":
-                print("Approach to drop")
             elif next_state == "release_gripper":
                 print("Release Gripper")
             elif next_state == "move_to_default":
@@ -218,10 +220,12 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
         state = next_state
 
-        if state in ["lift", "descend_to_cube", "drop", "place"]:
-            t_position = smooth_move(t_position, goal_position, speed=0.07)  
-        else:
+        if state in ["descend_to_cube", "lift_up", "drop", "place"]:
             t_position = smooth_move(t_position, goal_position, speed=0.1)
+        elif state in ["move"]:
+            t_position = smooth_move(t_position, goal_position, speed=0.05)
+        else:
+            t_position = smooth_move(t_position, goal_position, speed=0.15)
         
 
 
@@ -259,3 +263,25 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
 
 cv2.destroyAllWindows()
+
+print("\n========PLACEMENT SUMMARY========\n")
+with open("placement_results.csv", "w", newline="") as f:
+    writer = csv.DictWriter(f, fieldnames=["box", "intended_x", "intended_y", "intended_z",
+        "actual_x", "actual_y", "actual_z", "error_dist"])
+    writer.writeheader()
+    for i, (box_id, solution, actual_pos) in enumerate(placement_log):
+        intended_pos = np.array([solution["x"], solution["y"], solution["z"]])
+        error_dist = np.linalg.norm(actual_pos - intended_pos)
+        box_name = model.body(box_id).name
+        print(f"[{i+1}] {box_name} | error: {error_dist:.4f}m")
+        errors.append(error_dist)
+        writer.writerow({
+            "box": box_name,
+            "intended_x": round(intended_pos[0], 3),
+            "intended_y": round(intended_pos[1], 3),
+            "intended_z": round(intended_pos[2], 3),
+            "actual_x": round(actual_pos[0], 3),
+            "actual_y": round(actual_pos[1], 3),
+            "actual_z": round(actual_pos[2], 3),
+            "error_dist": round(error_dist, 3)
+        })
