@@ -3,7 +3,6 @@ import mujoco
 from init import *
 from collision import collision_check
 
-log_file = open("error_log.txt", "w")
 
 def smooth_move(current, target, speed=0.03):
     diff = target - current
@@ -34,10 +33,8 @@ def pick_and_place(
     placed_boxes = None,
     placed_solutions=None,
     target_box_solution = None,
-    default_q_nominal = None,
-    tol=0.04):
+    ):
     
-    captured_q_nominal = None
     pack_rotation = None
     rotated = None
 
@@ -83,12 +80,10 @@ def pick_and_place(
     goal_position = ee_pos.copy()
     current = ee_pos.copy()
 
-    captured_q_nominal = None
-    rotate_q_nominal = None
 
 
     if pack_pos is not None:
-        place_pos = np.array([pack_pos["x"], pack_pos["y"], pack_pos["z"] - 0.02])
+        place_pos = np.array([pack_pos["x"], pack_pos["y"], pack_pos["z"] - z_value + 0.01])
 
     # Start the task
     if state == "start":
@@ -102,8 +97,7 @@ def pick_and_place(
     elif state == "open_gripper":
         data.ctrl[gripper_id] = gripper_open
 
-        if data.time - state_start_time > 0.2:
-            captured_q_nominal = default_q_nominal
+        if data.time - state_start_time > 0.3:
             next_state = "move_to_above_cube"
 
     elif state == "move_to_above_cube":
@@ -140,12 +134,11 @@ def pick_and_place(
         goal_position = np.array([fixed_box_xy[0],fixed_box_xy[1],0.5])
 
         if reached(current,goal_position,tol = 0.07):
-            print(rotate_q_nominal)
             next_state = "rotate_check"
 
     elif state == "rotate_check":
         data.ctrl[gripper_id] = gripper_close
-        goal_position = np.array([start_space[0], start_space[1], 0.6])
+        goal_position = np.array([start_space[0], start_space[1], 0.5])
 
 
         pack_rotation = pack_pos["rotation"]
@@ -246,12 +239,12 @@ def pick_and_place(
 
     elif state == "move_to_default":
             goal_position = np.array([place_pos[0], place_pos[1], 0.5])
-            if reached(current,goal_position,tol):
+            if reached(current,goal_position,tol = 0.07):
                 next_state = "move_to_start"
 
     elif state == "move_to_start":
         goal_position = lift_pos
-        if reached(current,goal_position,tol):
+        if reached(current,goal_position,tol = 0.07):
             next_state = "end"
 
-    return next_state, goal_position, captured_q_nominal, t_rotation, pack_rotation, fixed_box_xy
+    return next_state, goal_position, t_rotation, pack_rotation, fixed_box_xy

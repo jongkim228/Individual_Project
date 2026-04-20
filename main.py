@@ -72,8 +72,6 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             goal_position = default_position
 
             if at_default_position and not initialized:
-                if default_q_nominal is None:
-                    default_q_nominal = data.qpos[:7].copy()
                 for scene_box in scene_boxes:
                     box_geom_id = model.body_geomadr[scene_box]
                     local_value = calculate_in_local(model, data, camera_name, box_geom_id)
@@ -148,14 +146,14 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                     fixed_box_xy = data.xpos[target_box_id][:2].copy()
 
                 before_rotate_states = ["start", "open_gripper", "move_to_above_cube", 
-                       "descend_to_cube", "close_gripper", "lift"]
+                       "descend_to_cube", "close_gripper", "lift_up"]
                 if state in before_rotate_states:
                     if grip_dir == "x_axis":
                         t_rotation = long_rotated
                     else:
                         t_rotation = d_rotation
 
-                next_state, goal_position, captured_q_nominal, t_rotation, pack_rotation, fixed_box_xy = pick_and_place(
+                next_state, goal_position,t_rotation, pack_rotation, fixed_box_xy = pick_and_place(
                 fixed_box_xy,
                 model, data, gripper_id, target_box, target_box_id, ee_pos,
                 state, state_start_time,
@@ -167,11 +165,8 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                 placed_boxes=placed_boxes,
                 placed_solutions=placed_solutions,
                 target_box_solution=target_box_solution,
-                default_q_nominal = default_q_nominal
             )
 
-                if captured_q_nominal is not None:
-                    saved_q_nominal = captured_q_nominal
 
         if next_state != state:
             state_start_time = data.time
@@ -186,7 +181,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                 print("Approach to the box")
             elif next_state == "close_gripper":
                 print("Close Gripper")
-            elif next_state == "lift":
+            elif next_state == "lift_up":
                 print("Lift the box")
             elif next_state == "rotate_check":
                 if pack_rotation == 2:
@@ -232,13 +227,9 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         for _ in range(10): 
             if state != "close_gripper":
                 ik_params = params.get(state, {"alpha": 0.3, "k_null": 0.05, "damping": 0.05})
-                if state in ["descend_to_cube", "lift"]:
-                    target_q_nom = saved_q_nominal
-                else:
-                    target_q_nom = None
-                
-                inverse_kinematics(model, data, gripper_site_id, t_position, t_rotation, arm_actuator_ids, custom_q_nominal=target_q_nom, **ik_params)
+                inverse_kinematics(model, data, gripper_site_id, t_position, t_rotation, arm_actuator_ids, **ik_params)
                 mujoco.mj_forward(model, data)
+                
 
         mujoco.mj_step(model, data)
 
