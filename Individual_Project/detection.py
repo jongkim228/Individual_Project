@@ -8,10 +8,9 @@ def cube_length_check(model, target_geom_id,gripper_max_open):
         return "tall"
 
     elif box_size[1] * 2 > gripper_max_open:
-        return "x_axis"
+        return "long"
     else: 
-        
-        return "y_axis"
+        return "default"
 
 
 def calculate_in_local(model, data, camera_name, target_geom_id):
@@ -30,10 +29,10 @@ def calculate_in_local(model, data, camera_name, target_geom_id):
 
 def objects_in_fov(model,local,camera_name,height,width):
     x, y, z = local
-    if z >= 0:
+    if z <= 0:
         return False
 
-    zz = -z
+    zz = z
     cam_id = model.camera(camera_name).id
     vfov_deg = np.deg2rad(model.cam_fovy[cam_id]) 
     tan_v = np.tan(vfov_deg / 2)

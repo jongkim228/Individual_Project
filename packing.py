@@ -2,8 +2,9 @@ import mujoco
 import csv
 import subprocess
 
+
 SCALE = 1000
-MARGIN = 0.005
+MARGIN = 0.01
 height = 0.07
 max_height = 0.5
 
@@ -117,8 +118,6 @@ def box_solution(data, model, boxes, placed_boxes):
             break
 
         height_local += max(box[2] for box in csv_box)
-        with open("solutions.csv", "r") as f:
-            print(f.read())
 
     results = []
     with open("solutions.csv", "r") as f:

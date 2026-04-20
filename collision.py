@@ -25,6 +25,7 @@ def territory_calculation(placed_boxes, solutions):
         offset = box_pos - solver_pos
         offsets.append(offset)
 
+        
         max_pos = box_pos + box_size
         min_pos = box_pos - box_size
 
@@ -49,7 +50,6 @@ def collision_check(target_box, grip_dir, placed_boxes, box_solution,solutions):
     # bound box with gripper
     bounded_box = bounding_box(box_size, grip_dir)
 
-    print("territory len",len(territory))
 
     if len(territory) == 0:
         return "safe", grip_dir
@@ -58,9 +58,8 @@ def collision_check(target_box, grip_dir, placed_boxes, box_solution,solutions):
 
     if len(territory) > 0:
 
-        avg_offset = np.mean(offsets, axis = 0)
         solution_center = np.array([box_solution["x"], box_solution["y"], box_solution["z"]])
-        target_center = solution_center + avg_offset
+        target_center = solution_center
 
         same_floor_territory = []
         for box in territory:
@@ -68,17 +67,13 @@ def collision_check(target_box, grip_dir, placed_boxes, box_solution,solutions):
             target_box_bottom = target_center[2] - box_size[2]
             height_diff = abs(placed_box_bottom - target_box_bottom)
 
-            if height_diff < box_size[2]:
+            if height_diff < box_size[2] * 0.1:
                 same_floor_territory.append(box)
 
 
         # calculation for target box with solution
         bound_max = target_center + bounded_box
         bound_min = target_center - bounded_box
-
-        print(f"bounded_box: {bounded_box}")
-        print(f"bound_min: {bound_min}")
-        print(f"bound_max: {bound_max}")
 
         for box in same_floor_territory:
             print(f"placed box min: {box['min']}, max: {box['max']}")
