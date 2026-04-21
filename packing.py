@@ -2,49 +2,32 @@ import mujoco
 import csv
 import subprocess
 
-
 SCALE = 1000
 MARGIN = 0.007
 height = 0.07
 max_height = 0.5
 
-def calculate_area_usage(file_name,floor_area):
-    total_volume = 0
-    with open(file_name,"r") as f:
+def calculate_area_usage(file_name, floor_area):
+    total_area = 0
+    with open(file_name, "r") as f:
         reader = csv.DictReader(f)
         for row in reader:
             if row["TYPE"] == "ITEM":
                 lx = int(row["LX"]) / SCALE
                 ly = int(row["LY"]) / SCALE
-                lz = int(row["LZ"]) / SCALE
-                total_volume += lx*ly *lz
-        
-    return total_volume
+                total_area += lx * ly
+    return total_area / floor_area
 
 
 def box_solution(data, model, boxes, placed_boxes):
     target_space_id = model.body("target_space").id
     target_pos = data.xpos[target_space_id]
-
     geom_id = model.body_geomadr[target_space_id]
     size = model.geom_size[geom_id]
     length = size[0] * 2
     width = size[1] * 2
 
     floor_area = length * width
-
-    total_area = 0
-    for i in placed_boxes:
-        box_geom_id = model.body_geomadr[i]
-        located_box_size = model.geom_size[box_geom_id]
-        total_area += located_box_size[0] * located_box_size[1] * 4
-
-    for i in boxes:
-        box_geom_id = model.body_geomadr[i]
-        located_box_size = model.geom_size[box_geom_id]
-        total_area += located_box_size[0] * located_box_size[1] * 4
-
-    area_usage = total_area / floor_area
 
     csv_box = []
     for body_id in boxes:
@@ -74,8 +57,8 @@ def box_solution(data, model, boxes, placed_boxes):
     layer_height = max(max(box) for box in csv_box)
     height_local = layer_height
 
-    origin_x = target_pos[0] + length / 2 
-    origin_y = target_pos[1] + width / 2 
+    origin_x = target_pos[0] + length / 2
+    origin_y = target_pos[1] + width / 2
     origin_z = target_pos[2] + 0.001
 
 
@@ -127,7 +110,7 @@ def box_solution(data, model, boxes, placed_boxes):
             if row["TYPE"] == "ITEM":
                 item_id = int(row["ID"])
                 box_size = csv_box[item_id]
-                
+
                 solver_x = int(row["X"]) / SCALE
                 solver_y = int(row["Y"]) / SCALE
                 solver_z = int(row["Z"]) / SCALE
@@ -136,8 +119,8 @@ def box_solution(data, model, boxes, placed_boxes):
                 solver_ly = int(row["LY"]) / SCALE - MARGIN * 2
                 solver_lz = int(row["LZ"]) / SCALE - MARGIN * 2
 
-                x_local = solver_x + solver_lx / 2  + MARGIN
-                y_local = solver_y + solver_ly / 2  + MARGIN
+                x_local = solver_x + solver_lx / 2 + MARGIN
+                y_local = solver_y + solver_ly / 2 + MARGIN
                 z_local = solver_z + solver_lz / 2
 
                 world_x = origin_x - x_local
@@ -155,9 +138,33 @@ def box_solution(data, model, boxes, placed_boxes):
                     "rotation": rotation
                 })
 
-    results.sort(key=lambda r: r["z"])
-    bin_volume = length * width * height_local
-    total_box_volume = calculate_area_usage("solutions.csv", floor_area)
+    actual_height = 0
+    with open("solutions.csv", "r") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            if row["TYPE"] == "ITEM":
+                top = (int(row["Z"]) + int(row["LZ"])) / SCALE
+                if top > actual_height:
+                    actual_height = top
+
+    total_box_volume = 0
+    with open("solutions.csv", "r") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            if row["TYPE"] == "ITEM":
+                lx = int(row["LX"]) / SCALE
+                ly = int(row["LY"]) / SCALE
+                lz = int(row["LZ"]) / SCALE
+                total_box_volume += lx * ly * lz
+
+    bin_volume = length * width * actual_height
     packing_efficiency = total_box_volume / bin_volume
     print(f"Packing efficiency: {packing_efficiency*100:.1f}%")
+
+    results.sort(key=lambda r: r["z"])
+    
+    with open("packing_efficiency.csv", "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["packing_efficiency"])
+        writer.writerow([round(packing_efficiency * 100, 1)])
     return results

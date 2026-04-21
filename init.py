@@ -20,7 +20,7 @@ params = {
     "descend_to_cube":       {"alpha": 0.15,  "k_null": 0.15, "damping": 0.02, "rot_weight": 10,"w_posture": 1.0, "w_limit": 0.5},
     "close_gripper":         {"alpha": 0.3,  "k_null": 0.15, "w_posture": 1.0, "w_limit": 0.0},
     "lift_up":               {"alpha": 0.1,  "k_null": 0.2,  "damping": 0.05,  "rot_weight": 10, "w_posture": 1.0, "w_limit": 0.5},
-    "move":                  {"alpha": 0.1,  "k_null": 0.15, "damping": 0.05,  "rot_weight": 5, "w_posture": 1.0, "w_limit": 1.0},
+    "move":                  {"alpha": 0.15,  "k_null": 0.15, "damping": 0.02,  "rot_weight": 5, "w_posture": 1.0, "w_limit": 1.0},
     "drop":                  {"alpha": 0.3,  "k_null": 0.15, "damping": 0.05,  "rot_weight": 5, "w_posture": 1.0, "w_limit": 0.5},
     "rotate_check":          {"alpha": 0.3,  "k_null": 0.3,  "damping": 0.05,  "rot_weight": 5, "w_posture": 1.0, "w_limit": 1.0},
     "move_to_center":        {"alpha": 0.3,  "k_null": 0.15, "damping": 0.05,  "rot_weight": 5, "w_posture": 1.0, "w_limit": 1.0},
