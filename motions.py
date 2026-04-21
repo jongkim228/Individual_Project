@@ -88,7 +88,7 @@ def pick_and_place(
     # Start the task
     if state == "start":
         # move gripper to above the cube
-        goal_position = above_box_pos
+        goal_position = lift_pos
         # change the state to open the gripper
         if reached(current,goal_position, tol = 0.05):
             next_state = "open_gripper"
@@ -116,7 +116,7 @@ def pick_and_place(
         target_box_pos[1], 
         pick_pos[2] ])
         
-        if reached(current, goal_position, tol=0.03):
+        if reached(current, goal_position, tol=0.02):
             if data.time - state_start_time > 0.3:
                 next_state = "close_gripper"
 
@@ -222,12 +222,12 @@ def pick_and_place(
 
     elif state == "move_to_place":
         goal_position = np.array([place_pos[0],place_pos[1],0.35])
-        if reached(current,goal_position,tol = 0.05):
+        if reached(current,goal_position,tol = 0.01):
             next_state = "place"
 
     elif state == "place":
         goal_position = place_pos
-        if reached(current, goal_position, tol=0.05):
+        if reached(current, goal_position, tol=0.03):
             next_state = "release_gripper"
 
     elif state == "release_gripper":

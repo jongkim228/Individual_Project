@@ -5,7 +5,7 @@ import cv2
 import csv
 import math
 
-from motions import pick_and_place, reached, smooth_move
+from motions import pick_and_place, reached, smooth_move, gripper_open
 from detection import calculate_in_local, objects_in_fov, cube_length_check
 from inverse_kinematics import inverse_kinematics
 from packing import box_solution
@@ -58,7 +58,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         #gripper position
         ee_pos = data.site_xpos[gripper_site_id].copy()
         #default position for before pick up
-        default_position = start_pos + np.array([0,0,0.5])
+        default_position = start_pos + np.array([0,0,0.35])
         at_default_position = reached(ee_pos, default_position, tol=0.05)
 
         gripper_pos = data.site_xpos[gripper_site_id].copy()
@@ -68,6 +68,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         #if state is "wait" it is ready to pick up the cube if it is on valid space
         if state == "wait":
             #move gripper to default postion (centre of limited space)
+            data.ctrl[gripper_id] = gripper_open
             goal_position = default_position
 
             if at_default_position and not initialized:

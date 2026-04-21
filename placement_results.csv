@@ -1,3 +1,1 @@
 box,intended_x,intended_y,intended_z,actual_x,actual_y,actual_z,error_dist
-cube1,0.51,0.16,0.02,0.513,0.147,0.031,17.16
-cube2,0.51,0.16,0.08,0.512,0.148,0.091,16.42

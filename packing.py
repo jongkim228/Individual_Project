@@ -4,21 +4,22 @@ import subprocess
 
 
 SCALE = 1000
-MARGIN = 0.01
+MARGIN = 0.007
 height = 0.07
 max_height = 0.5
 
 def calculate_area_usage(file_name,floor_area):
-    total_area = 0
+    total_volume = 0
     with open(file_name,"r") as f:
         reader = csv.DictReader(f)
         for row in reader:
             if row["TYPE"] == "ITEM":
                 lx = int(row["LX"]) / SCALE
                 ly = int(row["LY"]) / SCALE
-                total_area += lx*ly
-        usage = total_area / floor_area
-    return usage
+                lz = int(row["LZ"]) / SCALE
+                total_volume += lx*ly *lz
+        
+    return total_volume
 
 
 def box_solution(data, model, boxes, placed_boxes):
@@ -73,9 +74,9 @@ def box_solution(data, model, boxes, placed_boxes):
     layer_height = max(max(box) for box in csv_box)
     height_local = layer_height
 
-    origin_x = target_pos[0] + length / 2
-    origin_y = target_pos[1] + width / 2
-    origin_z = target_pos[2]
+    origin_x = target_pos[0] + length / 2 
+    origin_y = target_pos[1] + width / 2 
+    origin_z = target_pos[2] + 0.001
 
 
     while True:
@@ -99,7 +100,7 @@ def box_solution(data, model, boxes, placed_boxes):
         result = subprocess.run([
             "./packingsolver/build/src/box/packingsolver_box",
             "--items", "items.csv",
-            "--verbosity-level", "0",
+            "--verbosity-level", "1",
             "--bins", "bins.csv",
             "--parameters", "parameters.csv",
             "--certificate", "solutions.csv",
@@ -135,8 +136,8 @@ def box_solution(data, model, boxes, placed_boxes):
                 solver_ly = int(row["LY"]) / SCALE - MARGIN * 2
                 solver_lz = int(row["LZ"]) / SCALE - MARGIN * 2
 
-                x_local = solver_x + solver_lx / 2
-                y_local = solver_y + solver_ly / 2
+                x_local = solver_x + solver_lx / 2  + MARGIN
+                y_local = solver_y + solver_ly / 2  + MARGIN
                 z_local = solver_z + solver_lz / 2
 
                 world_x = origin_x - x_local
@@ -155,4 +156,8 @@ def box_solution(data, model, boxes, placed_boxes):
                 })
 
     results.sort(key=lambda r: r["z"])
+    bin_volume = length * width * height_local
+    total_box_volume = calculate_area_usage("solutions.csv", floor_area)
+    packing_efficiency = total_box_volume / bin_volume
+    print(f"Packing efficiency: {packing_efficiency*100:.1f}%")
     return results

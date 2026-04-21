@@ -17,10 +17,10 @@ params = {
     "wait":                  {"alpha": 0.9,  "k_null": 0.3,  "w_posture": 1.0, "w_limit": 1.0},
     "start":                 {"alpha": 0.9,  "k_null": 0.0,  "w_posture": 1.0, "w_limit": 0.0},
     "open_gripper":          {"alpha": 0.9,  "k_null": 0.0,  "w_posture": 1.0, "w_limit": 0.0},
-    "descend_to_cube":       {"alpha": 0.07,  "k_null": 0.15, "damping": 0.03, "rot_weight": 10,"w_posture": 1.0, "w_limit": 0.5},
+    "descend_to_cube":       {"alpha": 0.15,  "k_null": 0.15, "damping": 0.02, "rot_weight": 10,"w_posture": 1.0, "w_limit": 0.5},
     "close_gripper":         {"alpha": 0.3,  "k_null": 0.15, "w_posture": 1.0, "w_limit": 0.0},
     "lift_up":               {"alpha": 0.1,  "k_null": 0.2,  "damping": 0.05,  "rot_weight": 10, "w_posture": 1.0, "w_limit": 0.5},
-    "move":                  {"alpha": 0.3,  "k_null": 0.15, "damping": 0.05,  "rot_weight": 5, "w_posture": 1.0, "w_limit": 1.0},
+    "move":                  {"alpha": 0.1,  "k_null": 0.15, "damping": 0.05,  "rot_weight": 5, "w_posture": 1.0, "w_limit": 1.0},
     "drop":                  {"alpha": 0.3,  "k_null": 0.15, "damping": 0.05,  "rot_weight": 5, "w_posture": 1.0, "w_limit": 0.5},
     "rotate_check":          {"alpha": 0.3,  "k_null": 0.3,  "damping": 0.05,  "rot_weight": 5, "w_posture": 1.0, "w_limit": 1.0},
     "move_to_center":        {"alpha": 0.3,  "k_null": 0.15, "damping": 0.05,  "rot_weight": 5, "w_posture": 1.0, "w_limit": 1.0},
@@ -28,7 +28,7 @@ params = {
     "move_to_default":       {"alpha": 0.3,  "k_null": 0.15, "damping": 0.05,  "w_posture": 1.0, "w_limit": 1.0},
     "move_to_start":         {"alpha": 0.7,  "k_null": 0.15, "damping": 0.05,  "w_posture": 1.0, "w_limit": 1.0},
     "end":                   {"alpha": 0.7,  "k_null": 0.15, "damping": 0.05,  "w_posture": 1.0, "w_limit": 0.5},
-    "place":                 {"alpha": 0.07,  "k_null": 0.15, "damping": 0.03,  "rot_weight": 10,"w_posture": 1.0, "w_limit": 0.5},
+    "place":                 {"alpha": 0.15,  "k_null": 0.15, "damping": 0.02,  "rot_weight": 10,"w_posture": 1.0, "w_limit": 0.5},
     "collision_check_state": {"alpha": 0.3,  "k_null": 0.15, "damping": 0.05,  "w_posture": 1.0, "w_limit": 0.5},
     "rotate_gripper":        {"alpha": 0.3,  "k_null": 0.0,  "damping": 0.05,  "rot_weight": 5, "w_posture": 1.0, "w_limit": 0.0},
 }
@@ -69,7 +69,7 @@ RIGHT_FINGER_THICKNESS = R_max
 
 
 #Camera Rendering
-h, w = 320, 480
+h, w = 480, 300
 renderer = mujoco.Renderer(model, height=h, width=w)
 camera_name = "camera_head"
 
@@ -142,3 +142,11 @@ default_q_nominal = None
 
 errors = []
 placement_log = []
+
+# gripper id and control range
+gripper_id = model.actuator("actuator8").id
+gripper_range = model.actuator(gripper_id).ctrlrange
+
+# max gripper close and grippe open
+gripper_close = gripper_range[0]
+gripper_open = gripper_range[1]
