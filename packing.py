@@ -3,9 +3,9 @@ import csv
 import subprocess
 
 SCALE = 1000
-MARGIN = 0.007
+MARGIN = 0.005
 height = 0.07
-max_height = 0.5
+max_height = 0.7
 
 def calculate_area_usage(file_name, floor_area):
     total_area = 0
@@ -39,31 +39,21 @@ def box_solution(data, model, boxes, placed_boxes):
         writer = csv.DictWriter(f, fieldnames=["X", "Y", "Z", "ROTATIONS", "COPIES"])
         writer.writeheader()
         for x, y, z in csv_box:
-
-            if x <= length and y <= width:
-                rotations = 1
-            else:
-                rotations = 63
-
             writer.writerow({
                 "X": int((x + MARGIN * 2) * SCALE),
                 "Y": int((y + MARGIN * 2) * SCALE),
                 "Z": int(z * SCALE),
-                "ROTATIONS": rotations,
+                "ROTATIONS": 3,
                 "COPIES": 1
             })
 
-
-    layer_height = max(max(box) for box in csv_box)
-    height_local = layer_height
+    height_local = min(box[2] for box in csv_box)
 
     origin_x = target_pos[0] + length / 2
     origin_y = target_pos[1] + width / 2
     origin_z = target_pos[2] + 0.001
 
-
     while True:
-
         with open("bins.csv", "w", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=["X", "Y", "Z"])
             writer.writeheader()
@@ -76,9 +66,7 @@ def box_solution(data, model, boxes, placed_boxes):
         with open("parameters.csv", "w", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=["NAME", "VALUE"])
             writer.writeheader()
-            writer.writerow({
-                "NAME": "objective", "VALUE": "bin-packing"
-            })
+            writer.writerow({"NAME": "objective", "VALUE": "bin-packing"})
 
         result = subprocess.run([
             "./packingsolver/build/src/box/packingsolver_box",
@@ -97,11 +85,15 @@ def box_solution(data, model, boxes, placed_boxes):
             "--use-dichotomic-search", "false"
         ], capture_output=True, text=True)
 
-        area_usage = calculate_area_usage("solutions.csv", floor_area)
-        if area_usage >= 0.8 or height_local >= max_height:
+        with open("solutions.csv", "r") as f:
+            placed_count = sum(1 for row in csv.DictReader(f) if row["TYPE"] == "ITEM")
+
+        print(f"[Packing] height={height_local:.3f}, placed={placed_count}/{len(csv_box)}")
+
+        if placed_count == len(csv_box) or height_local >= max_height:
             break
 
-        height_local += max(box[2] for box in csv_box)
+        height_local += min(box[2] for box in csv_box)
 
     results = []
     with open("solutions.csv", "r") as f:
@@ -109,7 +101,6 @@ def box_solution(data, model, boxes, placed_boxes):
         for row in reader:
             if row["TYPE"] == "ITEM":
                 item_id = int(row["ID"])
-                box_size = csv_box[item_id]
 
                 solver_x = int(row["X"]) / SCALE
                 solver_y = int(row["Y"]) / SCALE
@@ -117,7 +108,7 @@ def box_solution(data, model, boxes, placed_boxes):
 
                 solver_lx = int(row["LX"]) / SCALE - MARGIN * 2
                 solver_ly = int(row["LY"]) / SCALE - MARGIN * 2
-                solver_lz = int(row["LZ"]) / SCALE - MARGIN * 2
+                solver_lz = int(row["LZ"]) / SCALE
 
                 x_local = solver_x + solver_lx / 2 + MARGIN
                 y_local = solver_y + solver_ly / 2 + MARGIN
@@ -128,7 +119,6 @@ def box_solution(data, model, boxes, placed_boxes):
                 world_z = origin_z + z_local
 
                 rotation = int(row.get("ROTATION", 0))
-
 
                 results.append({
                     "id":       item_id,
@@ -157,12 +147,12 @@ def box_solution(data, model, boxes, placed_boxes):
                 lz = int(row["LZ"]) / SCALE
                 total_box_volume += lx * ly * lz
 
-    bin_volume = length * width * actual_height
+    bin_volume = length * width * height_local
     packing_efficiency = total_box_volume / bin_volume
     print(f"Packing efficiency: {packing_efficiency*100:.1f}%")
 
     results.sort(key=lambda r: r["z"])
-    
+
     with open("packing_efficiency.csv", "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(["packing_efficiency"])

@@ -9,14 +9,14 @@ def bounding_box(box_size, grip_dir):
         return np.array([x_width, y, z])
     else:
         y_width = y + LEFT_FINGER_THICKNESS + RIGHT_FINGER_THICKNESS
-        return np.array([x,y_width, z])
+        return np.array([x, y_width, z])
 
-# placed boxes coordinates
+
 def territory_calculation(placed_boxes, solutions):
     placed_boxes_territory.clear()
     offsets = []
 
-    for box_id, solution in zip(placed_boxes,solutions):
+    for box_id, solution in zip(placed_boxes, solutions):
         geom_id = model.body_geomadr[box_id]
         box_size = model.geom_size[geom_id]
         box_pos = data.geom_xpos[geom_id]
@@ -25,7 +25,6 @@ def territory_calculation(placed_boxes, solutions):
         offset = box_pos - solver_pos
         offsets.append(offset)
 
-        
         max_pos = box_pos + box_size
         min_pos = box_pos - box_size
 
@@ -38,99 +37,62 @@ def territory_calculation(placed_boxes, solutions):
     return placed_boxes_territory, offsets
 
 
-def collision_check(target_box, grip_dir, placed_boxes, box_solution,solutions):
+def collision_check(target_box, grip_dir, placed_boxes, box_solution, solutions):
     collide = False
-    # calculation for placed boxes
-    territory, offsets = territory_calculation(placed_boxes,solutions)
+    territory, offsets = territory_calculation(placed_boxes, solutions)
 
-    # target box
     geom_id = model.body_geomadr[target_box]
     box_size = model.geom_size[geom_id].copy()
 
-    # bound box with gripper
     bounded_box = bounding_box(box_size, grip_dir)
 
 
     if len(territory) == 0:
         return "safe", grip_dir
 
-    # if box is placed on target place
+    solution_center = np.array([box_solution["x"], box_solution["y"], box_solution["z"]])
+    target_center = solution_center
+    target_box_bottom = target_center[2] - box_size[2]
 
-    if len(territory) > 0:
+    same_floor_territory = []
+    for box in territory:
+        placed_box_bottom = box["min"][2]
+        height_diff = abs(placed_box_bottom - target_box_bottom)
 
-        solution_center = np.array([box_solution["x"], box_solution["y"], box_solution["z"]])
-        target_center = solution_center
+        if height_diff < box_size[2]:
+            same_floor_territory.append(box)
 
-        same_floor_territory = []
-        for box in territory:
-            placed_box_bottom = box["min"][2]
-            target_box_bottom = target_center[2] - box_size[2]
-            height_diff = abs(placed_box_bottom - target_box_bottom)
+    bound_max = target_center + bounded_box
+    bound_min = target_center - bounded_box
 
-            if height_diff < box_size[2] * 0.1:
-                same_floor_territory.append(box)
+    for box in same_floor_territory:
+        x_overlap = bound_min[0] < box["max"][0] and bound_max[0] > box["min"][0]
+        y_overlap = bound_min[1] < box["max"][1] and bound_max[1] > box["min"][1]
+        z_overlap = bound_min[2] < box["max"][2] and bound_max[2] > box["min"][2]
 
 
-        # calculation for target box with solution
-        bound_max = target_center + bounded_box
-        bound_min = target_center - bounded_box
+        if x_overlap and y_overlap and z_overlap:
+            collide = True
+            break
 
+    if collide:
+        other_dir = "y_axis" if grip_dir == "x_axis" else "x_axis"
+        new_bounded = bounding_box(box_size, other_dir)
+        bound_max = target_center + new_bounded
+        bound_min = target_center - new_bounded
+
+        other_collide = False
         for box in same_floor_territory:
-            print(f"placed box min: {box['min']}, max: {box['max']}")
-
-            x_min = box["min"][0]
-            x_max = box["max"][0]
-
-            y_min = box["min"][1]
-            y_max = box["max"][1]
-
-            z_min = box["min"][2]
-            z_max = box["max"][2]
-
-            x_overlap = bound_min[0] < x_max and bound_max[0] > x_min
-            y_overlap = bound_min[1] < y_max and bound_max[1] > y_min
-            z_overlap = bound_min[2] < z_max and bound_max[2] > z_min
-
-            print(f"x_overlap: {x_overlap}, y_overlap: {y_overlap}, z_overlap: {z_overlap}")
-
+            x_overlap = bound_min[0] < box["max"][0] and bound_max[0] > box["min"][0]
+            y_overlap = bound_min[1] < box["max"][1] and bound_max[1] > box["min"][1]
+            z_overlap = bound_min[2] < box["max"][2] and bound_max[2] > box["min"][2]
             if x_overlap and y_overlap and z_overlap:
-                collide = True
+                other_collide = True
                 break
 
-        if collide:
+        if other_collide:
+            return "drop", grip_dir
+        else:
+            return "rotate", other_dir
 
-            if grip_dir == "x_axis":  
-                other_dir = "y_axis"
-            else:
-                other_dir = "x_axis"   
-
-            new_bounded = bounding_box(box_size, other_dir)
-            bound_max = target_center + new_bounded
-            bound_min = target_center - new_bounded
-
-            other_collide = False
-
-            for box in same_floor_territory:
-                x_min = box["min"][0]
-                x_max = box["max"][0]
-
-                y_min = box["min"][1]
-                y_max = box["max"][1]
-
-                z_min = box["min"][2]
-                z_max = box["max"][2]
-
-                x_overlap = bound_min[0] < x_max and bound_max[0] > x_min
-                y_overlap = bound_min[1] < y_max and bound_max[1] > y_min
-                z_overlap = bound_min[2] < z_max and bound_max[2] > z_min
-
-                if x_overlap and y_overlap and z_overlap:
-                    other_collide = True
-                    break
-            if other_collide:
-                return "drop", grip_dir
-            else:
-                return "rotate", other_dir
-            
-        
     return "safe", grip_dir

@@ -105,7 +105,7 @@ def pick_and_place(
         target_box_pos[1], 
         0.35 ])
         
-        if reached(current, goal_position, tol=0.03):
+        if reached(current, goal_position, tol=0.02):
             if data.time - state_start_time > 0.3:
                 next_state = "descend_to_cube"
 
@@ -116,7 +116,7 @@ def pick_and_place(
         target_box_pos[1], 
         pick_pos[2] ])
         
-        if reached(current, goal_position, tol=0.02):
+        if reached(current, goal_position, tol=0.015):
             if data.time - state_start_time > 0.3:
                 next_state = "close_gripper"
 
@@ -183,13 +183,11 @@ def pick_and_place(
 
     elif state == "collision_check_state":
         collision_result, grip_dir = collision_check(box_id,grip_dir,placed_boxes,target_box_solution,placed_solutions)
-        print(f"[ROTATION CHECK]{grip_dir}")
-        print(f"COLLISION CHECK]{collision_result}")
+
         if collision_result == "safe":
             next_state = "move_to_place"
         elif collision_result == "rotate":
-            print(f"[ROTATION CHECK]{grip_dir}")
-            print("rotate!")
+
             next_state = "rotate_gripper"
         else: #drop
             next_state = "move_to_drop"
@@ -222,7 +220,7 @@ def pick_and_place(
 
     elif state == "move_to_place":
         goal_position = np.array([place_pos[0],place_pos[1],0.35])
-        if reached(current,goal_position,tol = 0.01):
+        if reached(current,goal_position,tol = 0.015):
             next_state = "place"
 
     elif state == "place":

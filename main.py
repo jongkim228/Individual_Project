@@ -94,7 +94,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                         break
                     all_solutions = packing_result.copy()
                     target_box_solution = packing_result.pop(0)
-                    target_box_id = sorted_boxes.pop(0)
+                    target_box_id = valid_boxes[target_box_solution["id"]]
                     fixed_box_xy = data.xpos[target_box_id]
 
 
@@ -115,16 +115,15 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             placement_log.append((target_box_id, target_box_solution, actual_pos))    
 
             # if there are more boxes
-            if len(sorted_boxes) > 0:
+            if len(packing_result) > 0:
                 #Get reamining box details
-                target_box_id = sorted_boxes.pop(0)
                 target_box_solution = packing_result.pop(0)
+                target_box_id = valid_boxes[target_box_solution["id"]]
                 end_box_geom = model.body_geomadr[target_box_id]
 
                 #Check the collison and decide how to grab a box
                 grip_dir = cube_length_check(model, end_box_geom, gripper_max_open)
                 placed_solutions = all_solutions[:len(placed_boxes)] 
-
                 next_state = "start"
 
             else:
@@ -220,7 +219,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         else:
             t_position = smooth_move(t_position, goal_position, speed=0.1)
         
-        for _ in range(20): 
+        for _ in range(30): 
             if state != "close_gripper":
                 ik_params = params.get(state, {"alpha": 0.3, "k_null": 0.05, "damping": 0.05})
                 inverse_kinematics(model, data, gripper_site_id, t_position, t_rotation, arm_actuator_ids, **ik_params)
