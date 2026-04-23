@@ -153,6 +153,8 @@ def pick_and_place(
         data.ctrl[gripper_id] = gripper_close
         goal_position = np.array([fixed_box_xy[0],fixed_box_xy[1],0.35])
 
+
+
         if reached(current,goal_position,tol = 0.07):
             next_state = "rotate_check"
 
