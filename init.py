@@ -1,7 +1,7 @@
 import numpy as np
 import mujoco
 
-model = mujoco.MjModel.from_xml_path("mujoco_menagerie/franka_emika_panda/scene2.xml")
+model = mujoco.MjModel.from_xml_path("mujoco_menagerie/franka_emika_panda/scene1.xml")
 data = mujoco.MjData(model)
 
 arm_actuator_names = [
@@ -17,20 +17,21 @@ params = {
     "wait":                  {"alpha": 0.9,  "k_null": 0.3,  "w_posture": 1.0, "w_limit": 1.0},
     "start":                 {"alpha": 0.9,  "k_null": 0.0,  "w_posture": 1.0, "w_limit": 0.0},
     "open_gripper":          {"alpha": 0.9,  "k_null": 0.0,  "w_posture": 1.0, "w_limit": 0.0},
-    "descend_to_cube":       {"alpha": 0.15,  "k_null": 0.15, "damping": 0.02, "rot_weight": 10,"w_posture": 1.0, "w_limit": 0.5},
+    "descend_to_cube":       {"alpha": 0.05,  "k_null": 0.15, "damping": 0.02, "rot_weight": 3,"w_posture": 1.0, "w_limit": 0.5},
     "close_gripper":         {"alpha": 0.3,  "k_null": 0.15, "w_posture": 1.0, "w_limit": 0.0},
-    "lift_up":               {"alpha": 0.1,  "k_null": 0.2,  "damping": 0.05,  "rot_weight": 10, "w_posture": 1.0, "w_limit": 0.5},
-    "move":                  {"alpha": 0.1,  "k_null": 0.15, "damping": 0.02,  "rot_weight": 5, "w_posture": 1.0, "w_limit": 1.0},
-    "drop":                  {"alpha": 0.3,  "k_null": 0.15, "damping": 0.05,  "rot_weight": 5, "w_posture": 1.0, "w_limit": 0.5},
-    "rotate_check":          {"alpha": 0.3,  "k_null": 0.3,  "damping": 0.05,  "rot_weight": 5, "w_posture": 1.0, "w_limit": 1.0},
-    "move_to_center":        {"alpha": 0.3,  "k_null": 0.15, "damping": 0.05,  "rot_weight": 5, "w_posture": 1.0, "w_limit": 1.0},
-    "release_gripper":       {"alpha": 0.2,  "k_null": 0, "damping": 0.05,  "w_posture": 1.0, "w_limit": 0.0},
+    "lift_up":               {"alpha": 0.02,  "k_null": 0.2,  "damping": 0.05,  "rot_weight": 3, "w_posture": 1.0, "w_limit": 0.5},
+    "move_to_place":         {"alpha": 0.3,  "k_null": 0.15,  "damping": 0.05,  "rot_weight": 3, "w_posture": 1.0, "w_limit": 0.5},
+    "move":                  {"alpha": 0.02,  "k_null": 0.15, "damping": 0.05,  "rot_weight": 3, "w_posture": 1.0, "w_limit": 1.0},
+    "move_to_drop":          {"alpha": 0.02,  "k_null": 0.15, "damping": 0.05,  "rot_weight": 3, "w_posture": 1.0, "w_limit": 0.5},
+    "rotate_check":          {"alpha": 0.3,  "k_null": 0.07,  "damping": 0.05,  "rot_weight": 3, "w_posture": 1.0, "w_limit": 1.0},
+    "move_to_center":        {"alpha": 0.3,  "k_null": 0.15, "damping": 0.05,  "rot_weight": 3, "w_posture": 1.0, "w_limit": 1.0},
+    "release_gripper":       {"alpha": 0.1,  "k_null": 0, "damping": 0.01,  "w_posture": 0.03, "w_limit": 0.0},
     "move_to_default":       {"alpha": 0.3,  "k_null": 0.15, "damping": 0.05,  "w_posture": 1.0, "w_limit": 1.0},
     "move_to_start":         {"alpha": 0.7,  "k_null": 0.15, "damping": 0.05,  "w_posture": 1.0, "w_limit": 1.0},
     "end":                   {"alpha": 0.7,  "k_null": 0.15, "damping": 0.05,  "w_posture": 1.0, "w_limit": 0.5},
-    "place":                 {"alpha": 0.15,  "k_null": 0.15, "damping": 0.02,  "rot_weight": 10,"w_posture": 1.0, "w_limit": 0.5},
+    "place":                 {"alpha": 0.05,  "k_null": 0.15, "damping": 0.02,  "rot_weight": 3,"w_posture": 1.0, "w_limit": 0.5},
     "collision_check_state": {"alpha": 0.3,  "k_null": 0.15, "damping": 0.05,  "w_posture": 1.0, "w_limit": 0.5},
-    "rotate_gripper":        {"alpha": 0.3,  "k_null": 0.0,  "damping": 0.05,  "rot_weight": 5, "w_posture": 1.0, "w_limit": 0.0},
+    "rotate_gripper":        {"alpha": 0.3,  "k_null": 0.0,  "damping": 0.05,  "rot_weight": 3, "w_posture": 1.0, "w_limit": 0.0},
 }
 
 # space
@@ -50,16 +51,14 @@ for i in range(model.ngeom):
     if "left_finger" in bodyname:
         if model.geom(i).type == mujoco.mjtGeom.mjGEOM_BOX:
             size = model.geom(i).size
-            pos = model.geom(i).pos
-            y_end = abs(pos[1]) + size[1]
-            L_max = max(L_max, y_end)
+            thickness = size[1] * 2 
+            L_max = max(L_max, thickness)
 
     if "right_finger" in bodyname:
         if model.geom(i).type == mujoco.mjtGeom.mjGEOM_BOX:
             size = model.geom(i).size
-            pos = model.geom(i).pos
-            y_end = abs(pos[1]) + size[1]
-            R_max = max(R_max, y_end)
+            thickness = size[1] * 2
+            R_max = max(R_max, thickness)
 
 
 LEFT_FINGER_THICKNESS = L_max
@@ -98,7 +97,7 @@ d_rotation = np.array([
 ])
 
 #Z-axis 90 rotation matrix
-c, s = np.cos(np.pi/2), np.sin(np.pi/2)
+c, s = np.cos(-np.pi/2), np.sin(np.pi/2)
 z_90_rotation = np.array([
         [c,-s,0],
         [s,c,0],
@@ -150,3 +149,13 @@ gripper_range = model.actuator(gripper_id).ctrlrange
 # max gripper close and grippe open
 gripper_close = gripper_range[0]
 gripper_open = gripper_range[1]
+
+
+collision_geom_ids = set()
+for i in range(model.ngeom):
+    body_name = model.body(model.geom(i).bodyid).name
+    if ("left_finger" in body_name or "right_finger" in body_name):
+        if model.geom(i).type == mujoco.mjtGeom.mjGEOM_MESH:
+            collision_geom_ids.add(i)
+            
+place_contact_xmat = {}

@@ -5,11 +5,11 @@ def bounding_box(box_size, grip_dir):
     x, y, z = box_size
 
     if grip_dir == "x_axis":
-        x_width = x + LEFT_FINGER_THICKNESS + RIGHT_FINGER_THICKNESS
-        return np.array([x_width, y, z])
+        x_half = x + LEFT_FINGER_THICKNESS 
+        return np.array([x_half, y, z])
     else:
-        y_width = y + LEFT_FINGER_THICKNESS + RIGHT_FINGER_THICKNESS
-        return np.array([x, y_width, z])
+        y_half = y + LEFT_FINGER_THICKNESS
+        return np.array([x, y_half, z])
 
 
 def territory_calculation(placed_boxes, solutions):
@@ -59,11 +59,19 @@ def collision_check(target_box, grip_dir, placed_boxes, box_solution, solutions)
         placed_box_bottom = box["min"][2]
         height_diff = abs(placed_box_bottom - target_box_bottom)
 
+
+
         if height_diff < box_size[2]:
             same_floor_territory.append(box)
 
     bound_max = target_center + bounded_box
     bound_min = target_center - bounded_box
+
+    print(f"[DEBUG] target half-size: {box_size}")
+    print(f"[DEBUG] bounded_box ({grip_dir}): {bounded_box}")
+    print(f"[DEBUG] target center: {target_center}")
+    print(f"[DEBUG] bound min: {bound_min}, bound max: {bound_max}")
+    print(f"[DEBUG] LEFT_THICKNESS: {LEFT_FINGER_THICKNESS}")
 
     for box in same_floor_territory:
         x_overlap = bound_min[0] < box["max"][0] and bound_max[0] > box["min"][0]
@@ -96,3 +104,32 @@ def collision_check(target_box, grip_dir, placed_boxes, box_solution, solutions)
             return "rotate", other_dir
 
     return "safe", grip_dir
+
+
+def finger_contact(data, finger_collision_geom_ids):
+    for i in range(data.ncon):
+        g1, g2 = data.contact[i].geom1, data.contact[i].geom2
+        if g1 in finger_collision_geom_ids or g2 in finger_collision_geom_ids:
+            return True
+    return False
+
+def box_contact(data, model, placed_boxes, target_box_id):
+    placed_geom_ids = set()
+    for p in placed_boxes:
+        for i in range(model.ngeom):
+            if model.geom(i).bodyid == p:
+                placed_geom_ids.add(i)
+
+    target_geom_ids = set()
+    for i in range(model.ngeom):
+        if model.geom(i).bodyid == target_box_id:
+            target_geom_ids.add(i)
+
+    for i in range(data.ncon):
+        g1, g2 = data.contact[i].geom1, data.contact[i].geom2
+        if g1 in target_geom_ids and g2 in placed_geom_ids:
+            return True
+        if g2 in target_geom_ids and g1 in placed_geom_ids:
+            return True
+        
+    return False

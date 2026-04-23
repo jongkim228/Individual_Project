@@ -18,6 +18,9 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
     renderer.disable_depth_rendering()
     distance = depth[v, u] 
 
+    collision_log = []
+    current_state_contact = False
+
 # Start timer
     state = 'wait'
     start_time = data.time
@@ -63,6 +66,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
         gripper_pos = data.site_xpos[gripper_site_id].copy()
 
+        collision = None
         
 
         #if state is "wait" it is ready to pick up the cube if it is on valid space
@@ -112,7 +116,8 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             placed_boxes.append(target_box_id)
             geom_id = model.body_geomadr[target_box_id]
             actual_pos = data.geom_xpos[geom_id].copy()
-            placement_log.append((target_box_id, target_box_solution, actual_pos))    
+            actual_xmat = data.geom_xmat[geom_id].reshape(3, 3).copy()
+            placement_log.append((target_box_id, target_box_solution, actual_pos, actual_xmat))
 
             # if there are more boxes
             if len(packing_result) > 0:
@@ -152,7 +157,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                     else:
                         t_rotation = d_rotation
 
-                next_state, goal_position,t_rotation, pack_rotation, fixed_box_xy = pick_and_place(
+                next_state, goal_position,t_rotation, pack_rotation, fixed_box_xy, collision = pick_and_place(
                 fixed_box_xy,
                 model, data, gripper_id, target_box, target_box_id, ee_pos,
                 state, state_start_time,
@@ -164,10 +169,18 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                 placed_boxes=placed_boxes,
                 placed_solutions=placed_solutions,
                 target_box_solution=target_box_solution,
+                collision_geom_ids=collision_geom_ids
             )
 
+        if collision  in ("finger_contact", "box_contact") and not current_state_contact:
+            current_state_contact = True
+            collision_log.append({
+            "state": state,
+            "contact_type": collision
+        })
 
         if next_state != state:
+            current_state_contact = False
             state_start_time = data.time
             if next_state == "start":
                 print("==============================")
@@ -215,17 +228,17 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         state = next_state
 
         if state in ["descend_to_cube", "lift_up", "drop", "place","move"]:
-            t_position = smooth_move(t_position, goal_position, speed=0.07)
+            t_position = smooth_move(t_position, goal_position, speed=0.03)
         else:
-            t_position = smooth_move(t_position, goal_position, speed=0.1)
+            t_position = smooth_move(t_position, goal_position, speed=0.05)
         
-        for _ in range(30): 
+        for _ in range(5): 
             if state != "close_gripper":
                 ik_params = params.get(state, {"alpha": 0.3, "k_null": 0.05, "damping": 0.05})
                 inverse_kinematics(model, data, gripper_site_id, t_position, t_rotation, arm_actuator_ids, **ik_params)
-                mujoco.mj_forward(model, data)
                 
-        mujoco.mj_step(model, data)
+                
+            mujoco.mj_step(model, data)
 
         viewer.sync()
 
@@ -249,15 +262,45 @@ cv2.destroyAllWindows()
 
 print("\n========PLACEMENT SUMMARY========\n")
 with open("placement_results.csv", "w", newline="") as f:
-    writer = csv.DictWriter(f, fieldnames=["box", "intended_x", "intended_y", "intended_z",
-        "actual_x", "actual_y", "actual_z", "error_dist"])
+    writer = csv.DictWriter(f, fieldnames=[
+        "box", "intended_x", "intended_y", "intended_z",
+        "actual_x", "actual_y", "actual_z",
+        "error_dist", "orientation_error_deg"
+    ])
     writer.writeheader()
-    for i, (box_id, solution, actual_pos) in enumerate(placement_log):
+
+    for i, (box_id, solution, actual_pos, actual_xmat) in enumerate(placement_log):
         intended_pos = np.array([solution["x"], solution["y"], solution["z"]])
         error_dist = np.linalg.norm(actual_pos - intended_pos)
+
+        pack_rotation = solution["rotation"]
+        c, s = np.cos(np.pi/2), np.sin(np.pi/2)
+
+        if grip_dir == "x_axis":
+            z_90 = np.array([[c,-s,0],[s,c,0],[0,0,1]])
+            base_rotation = d_rotation @ z_90
+            rotated = True
+        else:
+            base_rotation = d_rotation
+            rotated = False
+
+        if pack_rotation == 1:
+            R = np.array([[0,1,0],[-1,0,0],[0,0,1]])
+
+        elif pack_rotation == 3:
+            R = np.array([[1,0,0],[0,c,-s],[0,s,c]])
+        else:
+            R = np.eye(3)
+
+        intended_xmat = base_rotation @ R @ np.array([[1,0,0],[0,-1,0],[0,0,-1]])
+        R_rot = intended_xmat.T @ actual_xmat
+        cos_rot = np.clip((np.trace(R_rot) - 1) / 2, -1.0, 1.0)
+        orientation_error_deg = round(np.degrees(np.arccos(cos_rot)), 3)
+
         box_name = model.body(box_id).name
-        print(f"[{i+1}] {box_name} | error: {error_dist*1000:.2f}mm")
-        errors.append(error_dist*1000)
+        print(f"[{i+1}] {box_name} | error: {error_dist*1000:.2f}mm | orientation: {orientation_error_deg:.2f}deg")
+        errors.append(error_dist * 1000)
+
         writer.writerow({
             "box": box_name,
             "intended_x": round(intended_pos[0], 3),
@@ -266,5 +309,13 @@ with open("placement_results.csv", "w", newline="") as f:
             "actual_x": round(actual_pos[0], 3),
             "actual_y": round(actual_pos[1], 3),
             "actual_z": round(actual_pos[2], 3),
-            "error_dist": round(error_dist*1000, 2)
+            "error_dist": round(error_dist * 1000, 2),
+            "orientation_error_deg": orientation_error_deg
         })
+
+
+with open("contact_results.csv", "w", newline="") as f:
+    writer = csv.DictWriter(f, fieldnames=["state", "contact_type"])
+    writer.writeheader()
+    for row in collision_log:
+        writer.writerow(row)

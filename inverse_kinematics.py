@@ -16,7 +16,7 @@ def inverse_kinematics(model, data, gripper_site_id, t_position, t_rotation,
 
     eomg = 0.001
     ev = 0.0001
-    max_iter = 3
+    max_iter = 50
 
     q_min = model.jnt_range[:7, 0].copy()
     q_max = model.jnt_range[:7, 1].copy()

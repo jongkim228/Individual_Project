@@ -1,10 +1,10 @@
 import numpy as np
 import mujoco
 from init import *
-from collision import collision_check
+from collision import collision_check, finger_contact, box_contact
 
 
-def smooth_move(current, target, speed=0.03):
+def smooth_move(current, target, speed=0.02):
     diff = target - current
     if np.linalg.norm(diff) < 0.02:
         return target.copy() 
@@ -33,10 +33,12 @@ def pick_and_place(
     placed_boxes = None,
     placed_solutions=None,
     target_box_solution = None,
+    collision_geom_ids=None
     ):
     
     pack_rotation = None
     rotated = None
+    collision = None
 
     box_name = model.body(box_id).name
     geom_id = model.geom(box_name).id
@@ -89,6 +91,12 @@ def pick_and_place(
     if state == "start":
         # move gripper to above the cube
         goal_position = lift_pos
+
+        if finger_contact(data,collision_geom_ids):
+            collision = "finger_contact"
+        else:
+            collision = "non_contact"
+
         # change the state to open the gripper
         if reached(current,goal_position, tol = 0.05):
             next_state = "open_gripper"
@@ -96,6 +104,9 @@ def pick_and_place(
     #open gripper    
     elif state == "open_gripper":
         data.ctrl[gripper_id] = gripper_open
+        fixed_box_xy = current[:2].copy()
+        goal_position = np.array([fixed_box_xy[0], fixed_box_xy[1], current[2]])
+
 
         if data.time - state_start_time > 0.3:
             next_state = "move_to_above_cube"
@@ -104,6 +115,11 @@ def pick_and_place(
         goal_position =  np.array([target_box_pos[0],
         target_box_pos[1], 
         0.35 ])
+
+        if finger_contact(data,collision_geom_ids):
+            collision = "finger_contact"
+        else:
+            collision = "non_contact"
         
         if reached(current, goal_position, tol=0.02):
             if data.time - state_start_time > 0.3:
@@ -115,8 +131,12 @@ def pick_and_place(
         goal_position =  np.array([target_box_pos[0],
         target_box_pos[1], 
         pick_pos[2] ])
+        if finger_contact(data,collision_geom_ids):
+            collision = "finger_contact"
+        else:
+            collision = "non_contact"
         
-        if reached(current, goal_position, tol=0.015):
+        if reached(current, goal_position, tol=0.02):
             if data.time - state_start_time > 0.3:
                 next_state = "close_gripper"
 
@@ -125,7 +145,7 @@ def pick_and_place(
         goal_position = current
         fixed_box_xy = current[:2].copy()
         data.ctrl[gripper_id] = gripper_close
-        
+
         if data.time - state_start_time > 0.3:
             next_state = "lift_up"
 
@@ -140,6 +160,10 @@ def pick_and_place(
         data.ctrl[gripper_id] = gripper_close
         goal_position = np.array([start_space[0], start_space[1], 0.35])
 
+        if finger_contact(data,collision_geom_ids):
+            collision = "finger_contact"
+        else:
+            collision = "non_contact"
 
         pack_rotation = pack_pos["rotation"]
         c, s = np.cos(np.pi/2), np.sin(np.pi/2)
@@ -178,6 +202,10 @@ def pick_and_place(
 
     elif state == "move":
         goal_position = np.array([target_space[0],target_space[1],0.35])
+        if finger_contact(data,collision_geom_ids):
+            collision = "finger_contact"
+        else:
+            collision = "non_contact"
         if reached(current,goal_position,tol = 0.07):
             next_state = "collision_check_state"
 
@@ -206,6 +234,11 @@ def pick_and_place(
 
             current_rotation = data.site_xmat[gripper_site_id].reshape(3, 3)
             rot_err = np.linalg.norm(t_rotation - current_rotation, 'fro')
+
+            if finger_contact(data,collision_geom_ids):
+                collision = "finger_contact"
+            else:
+                collision = "non_contact"
             
             if rot_err < 0.05:
                 grip_dir = "y_axis" if grip_dir == "x_axis" else "x_axis"   
@@ -214,33 +247,95 @@ def pick_and_place(
 
     #Move to above target coordinate for vertical move
     elif state == "move_to_drop":
-        goal_position = np.array([place_pos[0],place_pos[1],0.3])
+        if len(placed_boxes) > 0:
+            top_z = max(
+                data.geom_xpos[model.body_geomadr[b]][2] + model.geom_size[model.body_geomadr[b]][2]
+                for b in placed_boxes
+            )
+        drop_height = top_z + z_value + 0.01
+        goal_position = np.array([place_pos[0],place_pos[1],drop_height])
+
+        if finger_contact(data,collision_geom_ids):
+            collision = "finger_contact"
+
+        elif box_contact(data, model, placed_boxes, target_box_id):
+            collision = "box_contact"
+        else:
+            collision = "non_contact"
+
         if reached(current,goal_position,tol = 0.05):
             next_state = "release_gripper"
 
+
+
     elif state == "move_to_place":
         goal_position = np.array([place_pos[0],place_pos[1],0.35])
-        if reached(current,goal_position,tol = 0.015):
+        if finger_contact(data,collision_geom_ids):
+            collision = "finger_contact"
+        elif box_contact(data, model, placed_boxes, target_box_id):
+            collision = "box_contact"
+        else:
+            collision = "non_contact"
+        if reached(current,goal_position,tol = 0.04):
             next_state = "place"
 
     elif state == "place":
         goal_position = place_pos
+        if finger_contact(data,collision_geom_ids):
+            collision = "finger_contact"
+
+        elif box_contact(data, model, placed_boxes, target_box_id):
+
+            geom_id = model.body_geomadr[box_id]
+            current_xmat = data.geom_xmat[geom_id].reshape(3, 3).copy()
+
+
+            if box_id not in place_contact_xmat:
+                place_contact_xmat[box_id] = current_xmat
+                tilt_deg = 0.0
+            else: 
+                ref_xmat = place_contact_xmat[box_id]
+                R_tilt = ref_xmat.T @ current_xmat
+                cos_tilt = np.clip((np.trace(R_tilt) - 1) / 2, -1.0, 1.0)
+                tilt_deg = round(np.degrees(np.arccos(cos_tilt)), 3)
+
+            if tilt_deg > 5.0:
+                collision = "box_contact"
+
+        else:
+            collision = "non_contact"
+
         if reached(current, goal_position, tol=0.03):
             next_state = "release_gripper"
 
+
+    # release gripper to place
     elif state == "release_gripper":
+        goal_position = ee_pos.copy() 
         data.ctrl[gripper_id] = gripper_open
+        if finger_contact(data,collision_geom_ids):
+            collision = "finger_contact"
+        else:
+            collision = "non_contact"
         if data.time - state_start_time > 0.3:
             next_state = "move_to_default"
 
     elif state == "move_to_default":
             goal_position = np.array([place_pos[0], place_pos[1], 0.35])
+            if finger_contact(data,collision_geom_ids):
+                collision = "finger_contact"
+            else:
+                collision = "non_contact"
             if reached(current,goal_position,tol = 0.07):
                 next_state = "move_to_start"
 
     elif state == "move_to_start":
         goal_position = lift_pos
+        if finger_contact(data,collision_geom_ids):
+            collision = "finger_contact"
+        else:
+            collision = "non_contact"
         if reached(current,goal_position,tol = 0.07):
             next_state = "end"
 
-    return next_state, goal_position, t_rotation, pack_rotation, fixed_box_xy
+    return next_state, goal_position, t_rotation, pack_rotation, fixed_box_xy, collision
