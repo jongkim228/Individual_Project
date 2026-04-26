@@ -1,7 +1,7 @@
 import numpy as np
 import mujoco
 
-model = mujoco.MjModel.from_xml_path("mujoco_menagerie/franka_emika_panda/scene1.xml")
+model = mujoco.MjModel.from_xml_path("mujoco_menagerie/franka_emika_panda/scene3.xml")
 data = mujoco.MjData(model)
 
 arm_actuator_names = [
@@ -25,7 +25,7 @@ params = {
     "move_to_drop":          {"alpha": 0.02,  "k_null": 0.15, "damping": 0.05,  "rot_weight": 3, "w_posture": 1.0, "w_limit": 0.5},
     "rotate_check":          {"alpha": 0.3,  "k_null": 0.07,  "damping": 0.05,  "rot_weight": 3, "w_posture": 1.0, "w_limit": 1.0},
     "move_to_center":        {"alpha": 0.3,  "k_null": 0.15, "damping": 0.05,  "rot_weight": 3, "w_posture": 1.0, "w_limit": 1.0},
-    "release_gripper":       {"alpha": 0.1,  "k_null": 0, "damping": 0.01,  "w_posture": 0.03, "w_limit": 0.0},
+    "release_gripper":       {"alpha": 0.1,  "k_null": 0.3, "damping": 0.05,  "w_posture": 0.05, "w_limit": 0.0},
     "move_to_default":       {"alpha": 0.3,  "k_null": 0.15, "damping": 0.05,  "w_posture": 1.0, "w_limit": 1.0},
     "move_to_start":         {"alpha": 0.7,  "k_null": 0.15, "damping": 0.05,  "w_posture": 1.0, "w_limit": 1.0},
     "end":                   {"alpha": 0.7,  "k_null": 0.15, "damping": 0.05,  "w_posture": 1.0, "w_limit": 0.5},

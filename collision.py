@@ -3,12 +3,13 @@ from init import *
 def bounding_box(box_size, grip_dir):
 
     x, y, z = box_size
+    finger_thickness = LEFT_FINGER_THICKNESS + RIGHT_FINGER_THICKNESS
 
     if grip_dir == "x_axis":
-        x_half = x + LEFT_FINGER_THICKNESS 
+        x_half = x + finger_thickness
         return np.array([x_half, y, z])
     else:
-        y_half = y + LEFT_FINGER_THICKNESS
+        y_half = y + finger_thickness
         return np.array([x, y_half, z])
 
 
@@ -66,12 +67,6 @@ def collision_check(target_box, grip_dir, placed_boxes, box_solution, solutions)
 
     bound_max = target_center + bounded_box
     bound_min = target_center - bounded_box
-
-    print(f"[DEBUG] target half-size: {box_size}")
-    print(f"[DEBUG] bounded_box ({grip_dir}): {bounded_box}")
-    print(f"[DEBUG] target center: {target_center}")
-    print(f"[DEBUG] bound min: {bound_min}, bound max: {bound_max}")
-    print(f"[DEBUG] LEFT_THICKNESS: {LEFT_FINGER_THICKNESS}")
 
     for box in same_floor_territory:
         x_overlap = bound_min[0] < box["max"][0] and bound_max[0] > box["min"][0]

@@ -109,9 +109,6 @@ def box_solution(data, model, boxes, placed_boxes):
         if not placed_rows:
             break
 
-        print(f"[Layer {level}] Placed {len(placed_rows)}/{len(remaining_boxes)} boxes "
-              f"(z_offset={current_z_offset*1000:.0f}mm, height={layer_height*1000:.0f}mm)")
-
 
         placed_solver_ids = []
 
@@ -155,7 +152,7 @@ def box_solution(data, model, boxes, placed_boxes):
         level += 1
 
     if remaining_boxes:
-        print(f"[Packing] Warning: {len(remaining_boxes)} boxes could not be placed")
+        print(f"Warning: {len(remaining_boxes)} boxes could not be placed")
 
 
     total_box_volume = 0

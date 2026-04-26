@@ -62,7 +62,7 @@ def pick_and_place(
     above_box_pos = target_box_pos + above
 
 
-    close = np.array([0, 0, - z_value +0.01])
+    close = np.array([0, 0, - z_value +0.015])
 
     pick_pos = target_box_pos + close
 
@@ -83,9 +83,8 @@ def pick_and_place(
     current = ee_pos.copy()
 
 
-
     if pack_pos is not None:
-        place_pos = np.array([pack_pos["x"], pack_pos["y"], pack_pos["z"] - z_value + 0.01])
+        place_pos = np.array([pack_pos["x"], pack_pos["y"], pack_pos["z"]])
 
     # Start the task
     if state == "start":
@@ -142,7 +141,7 @@ def pick_and_place(
 
 
     elif state == "close_gripper":
-        goal_position = current
+        goal_position = np.array([fixed_box_xy[0], fixed_box_xy[1], current[2]])
         fixed_box_xy = current[:2].copy()
         data.ctrl[gripper_id] = gripper_close
 
@@ -307,14 +306,16 @@ def pick_and_place(
         else:
             collision = "non_contact"
 
-        if reached(current, goal_position, tol=0.03):
+        if reached(current, goal_position, tol=0.02):
             next_state = "release_gripper"
 
 
     # release gripper to place
     elif state == "release_gripper":
-        goal_position = ee_pos.copy() 
+        goal_position = ee_pos.copy()
         data.ctrl[gripper_id] = gripper_open
+        goal_position = ee_pos.copy()
+        
         if finger_contact(data,collision_geom_ids):
             collision = "finger_contact"
         else:
@@ -340,4 +341,4 @@ def pick_and_place(
         if reached(current,goal_position,tol = 0.07):
             next_state = "end"
 
-    return next_state, goal_position, t_rotation, pack_rotation, fixed_box_xy, collision
+    return next_state, goal_position, t_rotation, pack_rotation, fixed_box_xy, collision, grip_dir

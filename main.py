@@ -12,6 +12,8 @@ from packing import box_solution
 from init import *
 from collision import collision_check
 
+rotated_flag = {}
+
 with mujoco.viewer.launch_passive(model, data) as viewer:
     renderer.enable_depth_rendering()
     depth = renderer.render()
@@ -62,7 +64,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         ee_pos = data.site_xpos[gripper_site_id].copy()
         #default position for before pick up
         default_position = start_pos + np.array([0,0,0.35])
-        at_default_position = reached(ee_pos, default_position, tol=0.05)
+        at_default_position = reached(ee_pos, default_position, tol=0.07)
 
         gripper_pos = data.site_xpos[gripper_site_id].copy()
 
@@ -117,7 +119,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             geom_id = model.body_geomadr[target_box_id]
             actual_pos = data.geom_xpos[geom_id].copy()
             actual_xmat = data.geom_xmat[geom_id].reshape(3, 3).copy()
-            placement_log.append((target_box_id, target_box_solution, actual_pos, actual_xmat))
+            placement_log.append((target_box_id, target_box_solution, actual_pos, actual_xmat,grip_dir,t_rotation.copy()))
 
             # if there are more boxes
             if len(packing_result) > 0:
@@ -157,7 +159,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                     else:
                         t_rotation = d_rotation
 
-                next_state, goal_position,t_rotation, pack_rotation, fixed_box_xy, collision = pick_and_place(
+                next_state, goal_position,t_rotation, pack_rotation, fixed_box_xy, collision, grip_dir = pick_and_place(
                 fixed_box_xy,
                 model, data, gripper_id, target_box, target_box_id, ee_pos,
                 state, state_start_time,
@@ -208,6 +210,8 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                 print("Move To Target Position")
             elif next_state == "collision_check_state":
                 print("Checking Collision")
+            elif state == "rotate_gripper" and next_state == "move_to_place":
+                rotated_flag[target_box_id] = True
             elif next_state == "rotate_gripper":
                 print("Rotating Gripper")
             elif next_state == "move_to_place":
@@ -269,33 +273,17 @@ with open("placement_results.csv", "w", newline="") as f:
     ])
     writer.writeheader()
 
-    for i, (box_id, solution, actual_pos, actual_xmat) in enumerate(placement_log):
+    for i, (box_id, solution, actual_pos, actual_xmat, box_grip_dir, intended_rotation) in enumerate(placement_log):
         intended_pos = np.array([solution["x"], solution["y"], solution["z"]])
         error_dist = np.linalg.norm(actual_pos - intended_pos)
 
         pack_rotation = solution["rotation"]
         c, s = np.cos(np.pi/2), np.sin(np.pi/2)
 
-        if grip_dir == "x_axis":
-            z_90 = np.array([[c,-s,0],[s,c,0],[0,0,1]])
-            base_rotation = d_rotation @ z_90
-            rotated = True
-        else:
-            base_rotation = d_rotation
-            rotated = False
-
-        if pack_rotation == 1:
-            R = np.array([[0,1,0],[-1,0,0],[0,0,1]])
-
-        elif pack_rotation == 3:
-            R = np.array([[1,0,0],[0,c,-s],[0,s,c]])
-        else:
-            R = np.eye(3)
-
-        intended_xmat = base_rotation @ R @ np.array([[1,0,0],[0,-1,0],[0,0,-1]])
-        R_rot = intended_xmat.T @ actual_xmat
-        cos_rot = np.clip((np.trace(R_rot) - 1) / 2, -1.0, 1.0)
-        orientation_error_deg = round(np.degrees(np.arccos(cos_rot)), 3)
+        box_z_axis = actual_xmat[:, 2]
+        world_up = np.array([0, 0, 1])
+        cos_tilt = np.clip(abs(np.dot(box_z_axis, world_up)), -1.0, 1.0)
+        orientation_error_deg = round(np.degrees(np.arccos(cos_tilt)), 3)
 
         box_name = model.body(box_id).name
         print(f"[{i+1}] {box_name} | error: {error_dist*1000:.2f}mm | orientation: {orientation_error_deg:.2f}deg")
