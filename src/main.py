@@ -203,8 +203,6 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             if next_state == "start":
                 print("==============================")
                 print("Started Moving Boxes")
-            elif next_state == "open_gripper":
-                print("Open Gripper")
             elif next_state == "move_to_above_cube":
                 print("Move to above cube")
             elif next_state == "descend_to_cube":
@@ -262,10 +260,10 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
         viewer.sync()
 
-        #renderer.update_scene(data,camera=camera_name)
+        renderer.update_scene(data,camera=camera_name)
         
-        #img = renderer.render()
-        """
+        img = renderer.render()
+
         renderer.enable_depth_rendering()
         depth = renderer.render()
                 
@@ -277,7 +275,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
         if cv2.waitKey(1) == 27:
             break
-        """
+        
 
         
 

@@ -99,14 +99,7 @@ def pick_and_place(
 
         # change the state to open the gripper
         if reached(current,goal_position, tol = 0.05):
-            next_state = "open_gripper"
-        
-    #open gripper    
-    elif state == "open_gripper":
-        data.ctrl[gripper_id] = gripper_open
-        fixed_box_xy = current[:2].copy()
-        goal_position = np.array([fixed_box_xy[0], fixed_box_xy[1], current[2]])
-
+            next_state = "move_to_above_cube"
 
         if data.time - state_start_time > 0.3:
             next_state = "move_to_above_cube"

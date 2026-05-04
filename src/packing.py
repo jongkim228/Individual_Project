@@ -51,7 +51,7 @@ def run_packing_solver(remaining_boxes, length, width, layer_height):
 
 
     subprocess.run([
-        "./packingsolver/build/src/box/packingsolver_box",
+        "../packingsolver/build/src/box/packingsolver_box",
         "--items", "items.csv",
         "--verbosity-level", "1",
         "--bins", "bins.csv",
