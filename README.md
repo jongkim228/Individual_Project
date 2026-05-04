@@ -26,10 +26,17 @@ Individual_Project/
 └── README.md
 ```
 ## Demo
+
 ### scene3.xml
-| Initial State | Final State |
-|---|---|
-| ![Initial](https://github.com/user-attachments/assets/177838b5-d2fd-4086-ab03-10acd81c9d90) | ![Final](https://github.com/user-attachments/assets/5a3b9811-415c-4076-a8d4-adde53653463) |
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/177838b5-d2fd-4086-ab03-10acd81c9d90" width="45%"/>
+  <img src="https://github.com/user-attachments/assets/5a3b9811-415c-4076-a8d4-adde53653463" width="45%"/>
+</p>
+
+<p align="center">
+  <em>Initial State &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Final State</em>
+</p>
 
 
 ## Requirments
