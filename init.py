@@ -1,7 +1,7 @@
 import numpy as np
 import mujoco
 
-model = mujoco.MjModel.from_xml_path("mujoco_menagerie/franka_emika_panda/scene3.xml")
+model = mujoco.MjModel.from_xml_path("mujoco_menagerie/franka_emika_panda/scene2.xml")
 data = mujoco.MjData(model)
 
 arm_actuator_names = [

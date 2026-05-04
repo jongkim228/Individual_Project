@@ -12,6 +12,16 @@ from packing import box_solution
 from init import *
 from collision import collision_check
 
+COLOR_MAP = {
+    "cube1": "red",
+    "cube2": "green", 
+    "cube3": "blue",
+    "cube4": "yellow",
+    "cube5": "purple",
+    "cube6": "teal"
+}
+
+grip_check_log=[]
 rotated_flag = {}
 
 with mujoco.viewer.launch_passive(model, data) as viewer:
@@ -146,8 +156,6 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                 valid_geom = model.body_geomadr[target_box_id]
                 target_box = data.geom_xpos[valid_geom].copy()
 
-
-
                 if state in ["start", "open_gripper", "move_to_above_cube", "descend_to_cube"]:
                     fixed_box_xy = data.xpos[target_box_id][:2].copy()
 
@@ -159,7 +167,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                     else:
                         t_rotation = d_rotation
 
-                next_state, goal_position,t_rotation, pack_rotation, fixed_box_xy, collision, grip_dir = pick_and_place(
+                next_state, goal_position,t_rotation, pack_rotation, fixed_box_xy, collision, grip_dir,collision_result = pick_and_place(
                 fixed_box_xy,
                 model, data, gripper_id, target_box, target_box_id, ee_pos,
                 state, state_start_time,
@@ -173,6 +181,14 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                 target_box_solution=target_box_solution,
                 collision_geom_ids=collision_geom_ids
             )
+        
+
+        if next_state != "collision_check_state" and state == "collision_check_state":
+            grip_check_log.append({
+                "box": model.body(target_box_id).name,
+                "grip_dir": grip_dir,
+                "result": collision_result
+            })
 
         if collision  in ("finger_contact", "box_contact") and not current_state_contact:
             current_state_contact = True
@@ -246,10 +262,10 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
         viewer.sync()
 
-        renderer.update_scene(data,camera=camera_name)
+        #renderer.update_scene(data,camera=camera_name)
         
-        img = renderer.render()
-
+        #img = renderer.render()
+        """
         renderer.enable_depth_rendering()
         depth = renderer.render()
                 
@@ -261,6 +277,10 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
         if cv2.waitKey(1) == 27:
             break
+        """
+
+        
+
 
 cv2.destroyAllWindows()
 
@@ -286,11 +306,12 @@ with open("placement_results.csv", "w", newline="") as f:
         orientation_error_deg = round(np.degrees(np.arccos(cos_tilt)), 3)
 
         box_name = model.body(box_id).name
+        box_label = COLOR_MAP.get(box_name, box_name)
         print(f"[{i+1}] {box_name} | error: {error_dist*1000:.2f}mm | orientation: {orientation_error_deg:.2f}deg")
         errors.append(error_dist * 1000)
 
         writer.writerow({
-            "box": box_name,
+            "box": box_label,
             "intended_x": round(intended_pos[0], 3),
             "intended_y": round(intended_pos[1], 3),
             "intended_z": round(intended_pos[2], 3),
@@ -306,4 +327,10 @@ with open("contact_results.csv", "w", newline="") as f:
     writer = csv.DictWriter(f, fieldnames=["state", "contact_type"])
     writer.writeheader()
     for row in collision_log:
+        writer.writerow(row)
+
+with open("grip_check_results.csv", "w", newline="") as f:
+    writer = csv.DictWriter(f, fieldnames=["box", "grip_dir", "result"])
+    writer.writeheader()
+    for row in grip_check_log:
         writer.writerow(row)

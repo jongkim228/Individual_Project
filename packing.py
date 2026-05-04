@@ -103,7 +103,6 @@ def box_solution(data, model, boxes, placed_boxes):
     while remaining_boxes and level < MAX_LEVELS:
 
         layer_height = max(box[2] for box in remaining_boxes)
-
         placed_rows = run_packing_solver(remaining_boxes, length, width, layer_height)
 
         if not placed_rows:
@@ -111,7 +110,6 @@ def box_solution(data, model, boxes, placed_boxes):
 
 
         placed_solver_ids = []
-
         for row in placed_rows:
             solver_id = int(row["ID"])
             original_id = remaining_indices[solver_id]

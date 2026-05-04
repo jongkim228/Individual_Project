@@ -39,6 +39,7 @@ def pick_and_place(
     pack_rotation = None
     rotated = None
     collision = None
+    collision_result = None
 
     box_name = model.body(box_id).name
     geom_id = model.geom(box_name).id
@@ -306,7 +307,7 @@ def pick_and_place(
         else:
             collision = "non_contact"
 
-        if reached(current, goal_position, tol=0.02):
+        if reached(current, goal_position, tol=0.03):
             next_state = "release_gripper"
 
 
@@ -341,4 +342,4 @@ def pick_and_place(
         if reached(current,goal_position,tol = 0.07):
             next_state = "end"
 
-    return next_state, goal_position, t_rotation, pack_rotation, fixed_box_xy, collision, grip_dir
+    return next_state, goal_position, t_rotation, pack_rotation, fixed_box_xy, collision, grip_dir, collision_result
