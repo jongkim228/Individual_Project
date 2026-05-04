@@ -22,7 +22,7 @@ def calculate_area_usage(file_name, floor_area):
 def run_packing_solver(remaining_boxes, length, width, layer_height):
 
 
-    with open("items.csv", "w", newline="") as f:
+    with open("../results/items.csv", "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=["X", "Y", "Z", "ROTATIONS", "COPIES"])
         writer.writeheader()
         for x, y, z in remaining_boxes:
@@ -34,7 +34,7 @@ def run_packing_solver(remaining_boxes, length, width, layer_height):
                 "COPIES": 1
             })
 
-    with open("bins.csv", "w", newline="") as f:
+    with open("../results/bins.csv", "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=["X", "Y", "Z"])
         writer.writeheader()
         writer.writerow({
@@ -44,7 +44,7 @@ def run_packing_solver(remaining_boxes, length, width, layer_height):
         })
 
     # parameters.csv: Knapsack objective
-    with open("parameters.csv", "w", newline="") as f:
+    with open("../results/parameters.csv", "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=["NAME", "VALUE"])
         writer.writeheader()
         writer.writerow({"NAME": "objective", "VALUE": "knapsack"})
@@ -52,11 +52,11 @@ def run_packing_solver(remaining_boxes, length, width, layer_height):
 
     subprocess.run([
         "../packingsolver/build/src/box/packingsolver_box",
-        "--items", "items.csv",
+        "--items", "../results/items.csv",
         "--verbosity-level", "1",
-        "--bins", "bins.csv",
-        "--parameters", "parameters.csv",
-        "--certificate", "solutions.csv",
+        "--bins", "../results/bins.csv",
+        "--parameters", "../results/parameters.csv",
+        "--certificate", "../results/solutions.csv",
         "--time-limit", "5",
         "--objective", "Knapsack",
         "--optimization-mode", "NotAnytimeSequential",
@@ -68,7 +68,7 @@ def run_packing_solver(remaining_boxes, length, width, layer_height):
     ], capture_output=True, text=True)
 
     placed_rows = []
-    with open("solutions.csv", "r") as f:
+    with open("../results/solutions.csv", "r") as f:
         reader = csv.DictReader(f)
         for row in reader:
             if row["TYPE"] == "ITEM":

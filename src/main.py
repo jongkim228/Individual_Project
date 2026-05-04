@@ -283,7 +283,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 cv2.destroyAllWindows()
 
 print("\n========PLACEMENT SUMMARY========\n")
-with open("placement_results.csv", "w", newline="") as f:
+with open("../results/placement_results.csv", "w", newline="") as f:
     writer = csv.DictWriter(f, fieldnames=[
         "box", "intended_x", "intended_y", "intended_z",
         "actual_x", "actual_y", "actual_z",
@@ -321,13 +321,13 @@ with open("placement_results.csv", "w", newline="") as f:
         })
 
 
-with open("contact_results.csv", "w", newline="") as f:
+with open("../results/contact_results.csv", "w", newline="") as f:
     writer = csv.DictWriter(f, fieldnames=["state", "contact_type"])
     writer.writeheader()
     for row in collision_log:
         writer.writerow(row)
 
-with open("grip_check_results.csv", "w", newline="") as f:
+with open("../results/grip_check_results.csv", "w", newline="") as f:
     writer = csv.DictWriter(f, fieldnames=["box", "grip_dir", "result"])
     writer.writeheader()
     for row in grip_check_log:
