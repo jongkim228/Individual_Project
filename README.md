@@ -6,7 +6,7 @@
 
 This project implements an autonomous bin-packing pipeline for the Franka Emika Panda 7-DOF robot arm in MuJoCo simulation. Boxes detected in the starting space and it is placed in the target bin using knapsack packing sovler. Before placment, the system performs AABB gripper collision check to avoid colisions with previously placed boxes.
 
-![FSM Diagram](<img width="3474" height="1422" alt="fsm drawio" src="https://github.com/user-attachments/assets/c59334bc-02ae-4043-baa1-d4db3208f7d1" />)
+![FSM Diagram](https://github.com/user-attachments/assets/c59334bc-02ae-4043-baa1-d4db3208f7d1)
 
 ```
 Individual_Project/
@@ -29,7 +29,7 @@ Individual_Project/
 ### scene3.xml
 | Initial State | Final State |
 |---|---|
-| ![Initial](<img width="600" height="580" alt="Screenshot from 2026-04-27 15-57-35" src="https://github.com/user-attachments/assets/177838b5-d2fd-4086-ab03-10acd81c9d90" />) | ![Final](<img width="600" height="580" alt="Screenshot from 2026-04-27 16-30-59" src="https://github.com/user-attachments/assets/5a3b9811-415c-4076-a8d4-adde53653463" />) |
+| ![Initial](https://github.com/user-attachments/assets/177838b5-d2fd-4086-ab03-10acd81c9d90) | ![Final](https://github.com/user-attachments/assets/5a3b9811-415c-4076-a8d4-adde53653463) |
 
 
 ## Requirments
