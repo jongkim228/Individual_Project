@@ -158,15 +158,6 @@ def box_solution(data, model, boxes, placed_boxes):
         if tuple(box) not in [csv_box[i] for i in remaining_indices]:
             total_box_volume += box[0] * box[1] * box[2]
 
-    actual_bin_volume = length * width * current_z_offset if current_z_offset > 0 else 1
-    packing_efficiency = total_box_volume / actual_bin_volume
-    print(f"Packing efficiency: {packing_efficiency*100:.1f}%")
-
-    with open("packing_efficiency.csv", "w", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow(["packing_efficiency"])
-        writer.writerow([round(packing_efficiency * 100, 1)])
-
     all_results.sort(key=lambda r: r["z"])
 
     return all_results
