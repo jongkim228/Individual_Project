@@ -6,6 +6,8 @@
 
 This project implements an autonomous bin-packing pipeline for the Franka Emika Panda 7-DOF robot arm in MuJoCo simulation. Boxes detected in the starting space and it is placed in the target bin using knapsack packing sovler. Before placment, the system performs AABB gripper collision check to avoid colisions with previously placed boxes.
 
+![FSM Diagram](<img width="3474" height="1422" alt="fsm drawio" src="https://github.com/user-attachments/assets/c59334bc-02ae-4043-baa1-d4db3208f7d1" />)
+
 ```
 Individual_Project/
 ├── src/
@@ -23,6 +25,12 @@ Individual_Project/
 ├── solutions and results csv files
 └── README.md
 ```
+## Demo
+### scene3.xml
+| Initial State | Final State |
+|---|---|
+| ![Initial](<img width="600" height="580" alt="Screenshot from 2026-04-27 15-57-35" src="https://github.com/user-attachments/assets/177838b5-d2fd-4086-ab03-10acd81c9d90" />) | ![Final](<img width="600" height="580" alt="Screenshot from 2026-04-27 16-30-59" src="https://github.com/user-attachments/assets/5a3b9811-415c-4076-a8d4-adde53653463" />) |
+
 
 ## Requirments
 - Python
@@ -47,7 +55,8 @@ git clone https://github.com/jongkim228/Individual_Project.git
 
 ### 4. Copy scene files to test
 ```bash
-   cp scene1.xml scene2.xml scene3.xml mujoco_menagerie/franka_emika_panda/
+   cd ..
+   cp scene/scene1.xml scene/scene2.xml scene/scene3.xml mujoco_menagerie/franka_emika_panda/
 ```
    > You can also create your own scene XML files in `mujoco_menagerie/franka_emika_panda/` and update the path in `init.py`
    > model = mujoco.MjModel.from_xml_path("mujoco_menagerie/franka_emika_panda/<filename>.xml")
@@ -60,6 +69,7 @@ cmake --build build --config Release --parallel && cmake --install build --confi
 
 ### 6. Run
 ```bash
+cd src
 python main.py
 ```
 > **Note:** On macOS, use `mjpython` instead and update `detection.py`:
@@ -79,4 +89,6 @@ python main.py
 > ```bash
 > mjpython main.py
 > ```
+
+
 
