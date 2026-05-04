@@ -20,6 +20,7 @@ Individual_Project/
 ├── scene1.xml
 ├── scene2.xml
 ├── scene3.xml
+├── solutions and results csv files
 └── README.md
 ```
 
