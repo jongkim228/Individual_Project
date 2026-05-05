@@ -22,8 +22,8 @@
     <light pos="0 0 1.5" dir="0 0 -1" directional="true"/>
     <geom name="floor" size="0 0 0.05" type="plane" material="groundplane"/>
 
-    <body name="target_space" pos="0.38 0.2 0">
-    <geom type="box" size="0.08 0.075 0.001" rgba="0.86 0.86 0.86 1" friction="2.0 0 0"/>
+    <body name="target_space" pos="0.38 0.15 0">
+    <geom type="box" size="0.04 0.08 0.001" rgba="0.86 0.86 0.86 1" friction="2.0 0 0"/>
     </body>
 
     <body name="starting_space" pos="0.38 -0.2 0">
@@ -34,34 +34,30 @@
 
 <body name="cube1" pos="0.38 -0.25 0.035">
   <geom name ="cube1" type="box" size="0.07 0.03 0.03" rgba="1.0 0.3 0.3 1" friction="1.5 0.01 0.00" solref="0.01 0.8" solimp="0.95 0.99 0.001" condim="6"/>
-<site name="cube1_target" pos="0 0 0" size="0.005" rgba="0 1 0 1"/>
-<joint type="free"/>
+  <site name="cube1_target" pos="0 0 0" size="0.005" rgba="0 1 0 1"/>
+  <joint type="free"/>
 </body>
-<body name="cube2" pos="0.34 -0.1 0.035">
-  <geom name ="cube2" type="box" size="0.03 0.07 0.03" rgba="0.3 0.7 0.3 1" friction="1.5 0.01 0.00" solref="0.01 0.8" solimp="0.95 0.99 0.001" condim="6"/>
-<site name="cube2_target" pos="0 0 0" size="0.005" rgba="0 1 0 1"/>
-<joint type="free"/>
+
+<body name="cube2" pos="0.37 -0.1 0.035">
+  <geom name ="cube2" type="box" size="0.03 0.03 0.03" rgba="0.3 0.7 0.3 1" friction="1.5 0.01 0.00" solref="0.01 0.8" solimp="0.95 0.99 0.001" condim="6"/>
+  <site name="cube2_target" pos="0 0 0" size="0.005" rgba="0 1 0 1"/>
+  <joint type="free"/>
 </body>
-<body name="cube3" pos="0.45 -0.15 0.035">
+<body name="cube3" pos="0.45 -0.1 0.035">
   <geom name ="cube3" type="box" size="0.03 0.03 0.03" rgba="0.3 0.5 1.0 1" friction="1.5 0.01 0.00" solref="0.01 0.8" solimp="0.95 0.99 0.001" condim="6"/>
-<site name="cube3_target" pos="0 0 0" size="0.005" rgba="0 1 0 1"/>
-<joint type="free"/>
+  <site name="cube3_target" pos="0 0 0" size="0.005" rgba="0 1 0 1"/>
+  <joint type="free"/>
 </body>
-<body name="cube4" pos="0.45 -0.05 0.035">
-  <geom name ="cube4" type="box" size="0.03 0.03 0.03" rgba="1.0 0.8 0.2 1" friction="1.5 0.01 0.00" solref="0.01 0.8" solimp="0.95 0.99 0.001" condim="6"/>
-<site name="cube4_target" pos="0 0 0" size="0.005" rgba="0 1 0 1"/>
-<joint type="free"/>
+<body name="cube4" pos="0.38 -0.35 0.035">
+  <geom name ="cube4" type="box" size="0.07 0.03 0.03" rgba="1.0 0.8 0.2 1" friction="1.5 0.01 0.00" solref="0.01 0.8" solimp="0.95 0.99 0.001" condim="6"/>
+  <site name="cube4_target" pos="0 0 0" size="0.005" rgba="0 1 0 1"/>
+  <joint type="free"/>
 </body>
-<body name="cube5" pos="0.43 -0.35 0.035">
-  <geom name ="cube5" type="box" size="0.03 0.03 0.03" rgba="0.7 0.3 0.9 1" friction="1.5 0.01 0.00" solref="0.01 0.8" solimp="0.95 0.99 0.001" condim="6"/>
-<site name="cube5_target" pos="0 0 0" size="0.005" rgba="0 1 0 1"/>
-<joint type="free"/>
-</body>
-<body name="cube6" pos="0.35 -0.35 0.035">
-<geom name ="cube6" type="box" size="0.03 0.03 0.03" rgba="0.0 0.9 0.8 1" friction="1.5 0.01 0.00" solref="0.01 0.8" solimp="0.95 0.99 0.001" condim="6"/>
-<site name="cube6_target" pos="0 0 0" size="0.005" rgba="0 1 0 1"/>
-<joint type="free"/>
-</body>
+
+
+
+
+
 
 
 

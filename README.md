@@ -12,17 +12,21 @@ This project implements an autonomous bin-packing pipeline for the Franka Emika 
 Individual_Project/
 ├── src/
 │   ├── main.py
-│   ├── collsion.py
+│   ├── collision.py
 |   ├── detection.py
 |   ├── init.py
 |   ├── inverse_kinematics.py
 |   ├── motions.py
 |   └── packing.py
 |
-├── scene1.xml
-├── scene2.xml
-├── scene3.xml
-├── solutions and results csv files
+├── scene/
+│   ├── scene1.xml
+│   ├── scene1.xml
+│   └── scene1.xml
+│ 
+├── results/
+|   └── results and solution csv files
+│
 └── README.md
 ```
 
