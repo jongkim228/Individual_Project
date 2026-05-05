@@ -253,7 +253,7 @@ def pick_and_place(
         if finger_contact(data,collision_geom_ids):
             collision = "finger_contact"
 
-        elif box_contact(data, model, placed_boxes, target_box_id):
+        elif box_contact(data, model, placed_boxes, box_id):
             collision = "box_contact"
         else:
             collision = "non_contact"
@@ -267,7 +267,7 @@ def pick_and_place(
         goal_position = np.array([place_pos[0],place_pos[1],0.35])
         if finger_contact(data,collision_geom_ids):
             collision = "finger_contact"
-        elif box_contact(data, model, placed_boxes, target_box_id):
+        elif box_contact(data, model, placed_boxes, box_id):
             collision = "box_contact"
         else:
             collision = "non_contact"
@@ -275,33 +275,30 @@ def pick_and_place(
             next_state = "place"
 
     elif state == "place":
-        goal_position = place_pos
-        if finger_contact(data,collision_geom_ids):
-            collision = "finger_contact"
-
-        elif box_contact(data, model, placed_boxes, target_box_id):
+            goal_position = place_pos
 
             geom_id = model.body_geomadr[box_id]
             current_xmat = data.geom_xmat[geom_id].reshape(3, 3).copy()
-
-
             if box_id not in place_contact_xmat:
                 place_contact_xmat[box_id] = current_xmat
-                tilt_deg = 0.0
-            else: 
+
+            if finger_contact(data, collision_geom_ids):
+                collision = "finger_contact"
+
+            elif box_contact(data, model, placed_boxes, box_id):
                 ref_xmat = place_contact_xmat[box_id]
                 R_tilt = ref_xmat.T @ current_xmat
                 cos_tilt = np.clip((np.trace(R_tilt) - 1) / 2, -1.0, 1.0)
                 tilt_deg = round(np.degrees(np.arccos(cos_tilt)), 3)
 
-            if tilt_deg > 5.0:
-                collision = "box_contact"
+                if tilt_deg > 2.0:
+                    collision = "box_contact"
 
-        else:
-            collision = "non_contact"
+            else:
+                collision = "non_contact"
 
-        if reached(current, goal_position, tol=0.03):
-            next_state = "release_gripper"
+            if reached(current, goal_position, tol=0.03):
+                next_state = "release_gripper"
 
 
     # release gripper to place

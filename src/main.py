@@ -126,6 +126,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             #After putting box on the target space
             #put the box id in to placed_boxes list
             placed_boxes.append(target_box_id)
+            place_contact_xmat.pop(target_box_id, None)
             geom_id = model.body_geomadr[target_box_id]
             actual_pos = data.geom_xpos[geom_id].copy()
             actual_xmat = data.geom_xmat[geom_id].reshape(3, 3).copy()
@@ -192,7 +193,9 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
         if collision  in ("finger_contact", "box_contact") and not current_state_contact:
             current_state_contact = True
+            box_name = model.body(target_box_id).name
             collision_log.append({
+            "box": COLOR_MAP.get(box_name,box_name),
             "state": state,
             "contact_type": collision
         })
@@ -322,7 +325,7 @@ with open("../results/placement_results.csv", "w", newline="") as f:
 
 
 with open("../results/contact_results.csv", "w", newline="") as f:
-    writer = csv.DictWriter(f, fieldnames=["state", "contact_type"])
+    writer = csv.DictWriter(f, fieldnames=["box", "state", "contact_type"])
     writer.writeheader()
     for row in collision_log:
         writer.writerow(row)
