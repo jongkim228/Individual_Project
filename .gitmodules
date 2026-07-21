@@ -1,3 +1,6 @@
 [submodule "packingsolver"]
 	path = packingsolver
 	url = https://github.com/fontanf/packingsolver.git
+[submodule "mujoco_menagerie"]
+	url = https://github.com/jongkim228/mujoco_menagerie.git
+	path = mujoco_menagerie
